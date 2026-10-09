@@ -947,6 +947,75 @@
     .subscription-option small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
     .subscription-disclaimer { margin: 13px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
 
+    .journey-progress {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin: 2px 0 14px;
+      padding: 7px 10px;
+      border: 1px solid color-mix(in srgb, var(--brand) 42%, var(--line));
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--brand) 12%, var(--card));
+      color: var(--brand);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .journey-progress span { color: var(--muted); letter-spacing: 0; text-transform: none; }
+    .survey-card {
+      margin: 17px 0;
+      padding: 16px;
+      border: 1px solid color-mix(in srgb, var(--brand) 48%, var(--line));
+      border-radius: 20px;
+      background:
+        radial-gradient(circle at 93% 4%, color-mix(in srgb, var(--coral) 19%, transparent), transparent 30%),
+        linear-gradient(135deg, color-mix(in srgb, var(--brand) 13%, var(--card)), var(--card));
+    }
+    .survey-card h2 { margin: 2px 0 8px; font-size: 20px; line-height: 1.16; }
+    .survey-card > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.48; }
+    .survey-question { margin: 19px 0 8px; font-size: 15px; line-height: 1.35; }
+    .survey-option {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr);
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+      gap: 10px;
+      margin: 9px 0 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--card) 93%, var(--brand-soft));
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.38;
+    }
+    .survey-option:has(input:checked) { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 18%, var(--card)); }
+    .survey-option input { box-sizing: border-box; width: 20px; height: 20px; margin: 0; accent-color: var(--brand); }
+    .survey-option span { min-width: 0; overflow-wrap: anywhere; }
+    .survey-privacy-note { margin: 16px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .pricing-simulation {
+      display: grid;
+      gap: 8px;
+      margin: 15px 0 14px;
+      padding: 12px;
+      border: 1px solid color-mix(in srgb, var(--coral) 36%, var(--line));
+      border-radius: 15px;
+      background: color-mix(in srgb, var(--coral) 9%, var(--card));
+    }
+    .pricing-simulation h3 { margin: 0 0 2px; font-size: 14px; }
+    .pricing-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .pricing-row span { min-width: 0; }
+    .pricing-row b { color: var(--ink); font-size: 12px; white-space: nowrap; }
+    .pricing-row.highlight { margin: 2px -2px; padding: 9px; border-radius: 10px; background: color-mix(in srgb, var(--green) 16%, var(--card)); color: var(--green); }
+    .pricing-row.highlight b { color: var(--green); }
+    .pricing-simulation p { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .privacy-card { margin: 14px 0; padding: 12px; border: 1px solid color-mix(in srgb, var(--green) 42%, var(--line)); border-radius: 14px; background: var(--green-soft); color: var(--green); }
+    .privacy-card b { display: block; margin-bottom: 4px; font-size: 12px; }
+    .privacy-card p { margin: 0; font-size: 11px; line-height: 1.42; }
+
     .live-banner {
       display: flex;
       align-items: center;
@@ -1209,79 +1278,91 @@
     (function () {
       "use strict";
 
-      // Dates and venues were checked against the organisers' pages on 21 September 2026.
-      // The group prices and gauges remain simulated prototype data.
+      // Configuration unique de la simulation tarifaire. Pour comparer le
+      // modèle alternatif, passer MODE_FRAIS_SERVICE à "pourcentage".
+      var TARIFICATION = Object.freeze({
+        REMISE_GROUPE: 0.05,
+        FRAIS_SERVICE_FIXE: 2,
+        PRIX_ABONNEMENT_MENSUEL: 2.99,
+        PRIX_ABONNEMENT_TRIMESTRIEL: 7.99,
+        MODE_FRAIS_SERVICE: "fixe", // "pourcentage" pour le mode alternatif
+        TAUX_FRAIS_SERVICE: 0.10,
+        FRAIS_SERVICE_MINIMUM: 1
+      });
+
+      // Les événements, tarifs et tailles de groupes ci-dessous sont des
+      // données fictives utilisées uniquement pour ce prototype.
       var events = [
-        { city: "Paris", title: "Internationaux de France de Gymnastique", poster: "Gymnastique", category: "Sport", date: "sam. 26–dim. 27 sept.", dateEn: "Sat. 26–Sun. 27 Sep.", venue: "Accor Arena", publicPrice: 45, groupPrice: 39, current: 5, minimum: 6, theme: "sport", sourceUrl: "https://www.accorarena.com/fr/programmation/internationaux-de-france-de-gymnastique--4a8b1", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w600%2Ch600%2Cfcrop%2Cq85/a56b6852-7049-4c68-838d-c32e6eee0aa9.jpg" },
-        { city: "Paris", title: "A$AP Rocky — Don't Be Dumb World Tour", poster: "A$AP Rocky", category: "Concerts", date: "mer. 30 sept.", dateEn: "Wed. 30 Sep.", venue: "Accor Arena", publicPrice: 69, groupPrice: 59, current: 7, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/aap-rocky-dont-be-dumb-world-tour--03f96", imageUrl: "https://cdn.sortiraparis.com/images/61/1665/1238486-a-ap-rocky-en-concert-a-l-accor-arena-de-paris-en-septembre-2026.jpg" },
-        { city: "Paris", title: "Gradur", poster: "Gradur", category: "Concerts", date: "ven. 16 oct. · 20h", dateEn: "Fri. 16 Oct. · 20:00", venue: "Accor Arena", publicPrice: 55, groupPrice: 47, current: 6, minimum: 7, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/gradur--54712", imageUrl: "https://www.places-concert.com/images/visuels/events_gradur_accor_arena_paris_1219025546_large_025547.webp" },
-        { city: "Paris", title: "Bigflo & Oli — Karma", poster: "Bigflo & Oli", category: "Concerts", date: "lun. 19–mar. 20 oct. · 20h", dateEn: "Mon. 19–Tue. 20 Oct. · 20:00", venue: "Accor Arena", publicPrice: 59, groupPrice: 51, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/bigflo-and-oli--2fa59", imageUrl: "https://photos.tf1.fr/1280/720/article-tf1-940-x-531-7-ac2de7-e09221-0%403x.jpg" },
-        { city: "Paris", title: "Jungle", poster: "Jungle", category: "Concerts", date: "ven. 30 oct. · 20h", dateEn: "Fri. 30 Oct. · 20:00", venue: "Accor Arena", publicPrice: 60, groupPrice: 52, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/jungle--13ed4", imageUrl: "https://cdn.sortiraparis.com/images/80/1665/1259039-jungle-en-concert-a-paris-bercy-en-octobre-2026.jpg" },
-        { city: "Paris", title: "Le Plus Grand Château Hanté de Paris", poster: "Halloween", category: "Clubs", date: "sam. 31 oct. · 22h–5h", dateEn: "Sat. 31 Oct. · 22:00–05:00", venue: "Club Haussmann", publicPrice: 32, groupPrice: 27, current: 11, minimum: 12, theme: "club", sourceUrl: "https://shotgun.live/fr/events/le-plus-grand-chateau-hante-de-paris-halloween-party-2026", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_1200%2Ch_630/f_jpg/q_auto/production/artworks/halloween-paris-soiree-2026_dgagoc.jpg" },
+        { city: "Paris", title: "Internationaux de France de Gymnastique", poster: "Gymnastique", category: "Sport", date: "sam. 26–dim. 27 sept.", dateEn: "Sat. 26–Sun. 27 Sep.", venue: "Accor Arena", publicPrice: 45, current: 5, minimum: 6, theme: "sport", sourceUrl: "https://www.accorarena.com/fr/programmation/internationaux-de-france-de-gymnastique--4a8b1", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w600%2Ch600%2Cfcrop%2Cq85/a56b6852-7049-4c68-838d-c32e6eee0aa9.jpg" },
+        { city: "Paris", title: "A$AP Rocky — Don't Be Dumb World Tour", poster: "A$AP Rocky", category: "Concerts", date: "mer. 30 sept.", dateEn: "Wed. 30 Sep.", venue: "Accor Arena", publicPrice: 69, current: 7, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/aap-rocky-dont-be-dumb-world-tour--03f96", imageUrl: "https://cdn.sortiraparis.com/images/61/1665/1238486-a-ap-rocky-en-concert-a-l-accor-arena-de-paris-en-septembre-2026.jpg" },
+        { city: "Paris", title: "Gradur", poster: "Gradur", category: "Concerts", date: "ven. 16 oct. · 20h", dateEn: "Fri. 16 Oct. · 20:00", venue: "Accor Arena", publicPrice: 55, current: 6, minimum: 7, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/gradur--54712", imageUrl: "https://www.places-concert.com/images/visuels/events_gradur_accor_arena_paris_1219025546_large_025547.webp" },
+        { city: "Paris", title: "Bigflo & Oli — Karma", poster: "Bigflo & Oli", category: "Concerts", date: "lun. 19–mar. 20 oct. · 20h", dateEn: "Mon. 19–Tue. 20 Oct. · 20:00", venue: "Accor Arena", publicPrice: 59, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/bigflo-and-oli--2fa59", imageUrl: "https://photos.tf1.fr/1280/720/article-tf1-940-x-531-7-ac2de7-e09221-0%403x.jpg" },
+        { city: "Paris", title: "Jungle", poster: "Jungle", category: "Concerts", date: "ven. 30 oct. · 20h", dateEn: "Fri. 30 Oct. · 20:00", venue: "Accor Arena", publicPrice: 60, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/jungle--13ed4", imageUrl: "https://cdn.sortiraparis.com/images/80/1665/1259039-jungle-en-concert-a-paris-bercy-en-octobre-2026.jpg" },
+        { city: "Paris", title: "Le Plus Grand Château Hanté de Paris", poster: "Halloween", category: "Clubs", date: "sam. 31 oct. · 22h–5h", dateEn: "Sat. 31 Oct. · 22:00–05:00", venue: "Club Haussmann", publicPrice: 32, current: 11, minimum: 12, theme: "club", sourceUrl: "https://shotgun.live/fr/events/le-plus-grand-chateau-hante-de-paris-halloween-party-2026", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_1200%2Ch_630/f_jpg/q_auto/production/artworks/halloween-paris-soiree-2026_dgagoc.jpg" },
 
-        { city: "Lyon", title: "LDLC ASVEL vs Maccabi Tel Aviv", poster: "ASVEL · Maccabi", category: "Sport", date: "jeu. 24 sept. · 20h45", dateEn: "Thu. 24 Sep. · 20:45", venue: "LDLC Arena · Décines", publicPrice: 42, groupPrice: 36, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/ldlc-asvel-maccabi-tel-aviv-lyon-septembre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/08/LDLCArena_SansTexte_1920x1080-1.jpg" },
-        { city: "Lyon", title: "France vs Suède — handball féminin", poster: "France · Suède", category: "Sport", date: "sam. 26 sept. · 20h", dateEn: "Sat. 26 Sep. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 38, groupPrice: 32, current: 5, minimum: 7, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/handball-france-vs-suede-lyon-septembre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/05/FRA-SUE_LDLC_ARENA_1920x1080_Billetterie_Salle_LDLC_Arena.jpg" },
-        { city: "Lyon", title: "LDLC ASVEL vs Valencia", poster: "ASVEL · Valencia", category: "Sport", date: "ven. 2 oct. · 20h", dateEn: "Fri. 2 Oct. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 42, groupPrice: 36, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/ldlc-asvel-valencia-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/09/LDLCArena_SansTexte_1920x1080-5.jpg" },
-        { city: "Lyon", title: "Grand Prix Auvergne-Rhône-Alpes ATP 250", poster: "ATP 250", category: "Sport", date: "dim. 18–dim. 25 oct.", dateEn: "Sun. 18–Sun. 25 Oct.", venue: "LDLC Arena · Décines", publicPrice: 55, groupPrice: 47, current: 9, minimum: 10, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/grand-prix-auvergne-rhone-alpes-lyon-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/07/10_GP_AURA_VISUEL_BILLET_1920x1080px.jpg" },
-        { city: "Lyon", title: "LDLC ASVEL vs Partizan", poster: "ASVEL · Partizan", category: "Sport", date: "mer. 28 oct. · 20h", dateEn: "Wed. 28 Oct. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 42, groupPrice: 36, current: 5, minimum: 8, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/ldlc-asvel-partizan-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/07/asvel-partizan-1920x1080-1.png" },
-        { city: "Lyon", title: "Legend Tour by Trade Republic", poster: "Legend Tour", category: "Humour", date: "jeu. 29 oct. · 20h", dateEn: "Thu. 29 Oct. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 49, groupPrice: 42, current: 6, minimum: 7, theme: "humour", sourceUrl: "https://www.ldlcarena.com/evenement/legend-tour-lyon-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/04/Legend_29-octobre-2026_LDLCArena_SansTexte_1920x1080.jpg" },
-        { city: "Lyon", title: "LDLC ASVEL vs Baskonia", poster: "ASVEL · Baskonia", category: "Sport", date: "ven. 30 oct. · 20h", dateEn: "Fri. 30 Oct. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 42, groupPrice: 36, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/ldlc-asvel-baskonia-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/09/asvel-baskonia-1920x1080-1.png" },
-        { city: "Lyon", title: "Dabeull Live Band", poster: "Dabeull", category: "Concerts", date: "sam. 31 oct. · 20h", dateEn: "Sat. 31 Oct. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 45, groupPrice: 38, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.ldlcarena.com/evenement/dabeull-live-band-lyon-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/05/Dabeull_31-octobre-2026_LDLCArena_SansTexte_1920x1080_1.jpg" },
-        { city: "Lyon", title: "NUIT ENCORE × 23:59", poster: "Encore · 23:59", category: "Clubs", date: "sam. 24 oct. · 22h", dateEn: "Sat. 24 Oct. · 22:00", venue: "Halle Tony Garnier · Lyon 7e", publicPrice: 43, groupPrice: 37, current: 6, minimum: 8, theme: "club", sourceUrl: "https://www.halle-tony-garnier.fr/fr/programmation/nuit-encore-x-23-59", imageUrl: "https://www.halle-tony-garnier.fr/storage/144802/conversions/2026-10-24-NUIT-ENCORE-X-23-59-carre-4-20260703-170839-square.jpg" },
-        { city: "Lyon", title: "Josman — DPC Tour", poster: "Josman", category: "Concerts", date: "sam. 7 nov. · 20h", dateEn: "Sat. 7 Nov. · 20:00", venue: "Halle Tony Garnier · Lyon 7e", publicPrice: 52, groupPrice: 45, current: 5, minimum: 8, theme: "concert", sourceUrl: "https://www.halle-tony-garnier.fr/fr/programmation/josman-2", imageUrl: "https://www.halle-tony-garnier.fr/storage/142169/conversions/2026-11-07-JOSMAN-carre-josma-20260210-152457-square.jpg" },
+        { city: "Lyon", title: "LDLC ASVEL vs Maccabi Tel Aviv", poster: "ASVEL · Maccabi", category: "Sport", date: "jeu. 24 sept. · 20h45", dateEn: "Thu. 24 Sep. · 20:45", venue: "LDLC Arena · Décines", publicPrice: 42, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/ldlc-asvel-maccabi-tel-aviv-lyon-septembre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/08/LDLCArena_SansTexte_1920x1080-1.jpg" },
+        { city: "Lyon", title: "France vs Suède — handball féminin", poster: "France · Suède", category: "Sport", date: "sam. 26 sept. · 20h", dateEn: "Sat. 26 Sep. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 38, current: 5, minimum: 7, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/handball-france-vs-suede-lyon-septembre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/05/FRA-SUE_LDLC_ARENA_1920x1080_Billetterie_Salle_LDLC_Arena.jpg" },
+        { city: "Lyon", title: "LDLC ASVEL vs Valencia", poster: "ASVEL · Valencia", category: "Sport", date: "ven. 2 oct. · 20h", dateEn: "Fri. 2 Oct. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 42, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/ldlc-asvel-valencia-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/09/LDLCArena_SansTexte_1920x1080-5.jpg" },
+        { city: "Lyon", title: "Grand Prix Auvergne-Rhône-Alpes ATP 250", poster: "ATP 250", category: "Sport", date: "dim. 18–dim. 25 oct.", dateEn: "Sun. 18–Sun. 25 Oct.", venue: "LDLC Arena · Décines", publicPrice: 55, current: 9, minimum: 10, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/grand-prix-auvergne-rhone-alpes-lyon-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/07/10_GP_AURA_VISUEL_BILLET_1920x1080px.jpg" },
+        { city: "Lyon", title: "LDLC ASVEL vs Partizan", poster: "ASVEL · Partizan", category: "Sport", date: "mer. 28 oct. · 20h", dateEn: "Wed. 28 Oct. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 42, current: 5, minimum: 8, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/ldlc-asvel-partizan-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/07/asvel-partizan-1920x1080-1.png" },
+        { city: "Lyon", title: "Legend Tour by Trade Republic", poster: "Legend Tour", category: "Humour", date: "jeu. 29 oct. · 20h", dateEn: "Thu. 29 Oct. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 49, current: 6, minimum: 7, theme: "humour", sourceUrl: "https://www.ldlcarena.com/evenement/legend-tour-lyon-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/04/Legend_29-octobre-2026_LDLCArena_SansTexte_1920x1080.jpg" },
+        { city: "Lyon", title: "LDLC ASVEL vs Baskonia", poster: "ASVEL · Baskonia", category: "Sport", date: "ven. 30 oct. · 20h", dateEn: "Fri. 30 Oct. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 42, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.ldlcarena.com/evenement/ldlc-asvel-baskonia-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/09/asvel-baskonia-1920x1080-1.png" },
+        { city: "Lyon", title: "Dabeull Live Band", poster: "Dabeull", category: "Concerts", date: "sam. 31 oct. · 20h", dateEn: "Sat. 31 Oct. · 20:00", venue: "LDLC Arena · Décines", publicPrice: 45, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.ldlcarena.com/evenement/dabeull-live-band-lyon-octobre-2026/", imageUrl: "https://www.ldlcarena.com/wp-content/uploads/2026/05/Dabeull_31-octobre-2026_LDLCArena_SansTexte_1920x1080_1.jpg" },
+        { city: "Lyon", title: "NUIT ENCORE × 23:59", poster: "Encore · 23:59", category: "Clubs", date: "sam. 24 oct. · 22h", dateEn: "Sat. 24 Oct. · 22:00", venue: "Halle Tony Garnier · Lyon 7e", publicPrice: 43, current: 6, minimum: 8, theme: "club", sourceUrl: "https://www.halle-tony-garnier.fr/fr/programmation/nuit-encore-x-23-59", imageUrl: "https://www.halle-tony-garnier.fr/storage/144802/conversions/2026-10-24-NUIT-ENCORE-X-23-59-carre-4-20260703-170839-square.jpg" },
+        { city: "Lyon", title: "Josman — DPC Tour", poster: "Josman", category: "Concerts", date: "sam. 7 nov. · 20h", dateEn: "Sat. 7 Nov. · 20:00", venue: "Halle Tony Garnier · Lyon 7e", publicPrice: 52, current: 5, minimum: 8, theme: "concert", sourceUrl: "https://www.halle-tony-garnier.fr/fr/programmation/josman-2", imageUrl: "https://www.halle-tony-garnier.fr/storage/142169/conversions/2026-11-07-JOSMAN-carre-josma-20260210-152457-square.jpg" },
 
-        { city: "Lille", title: "M Pokora — Adrénaline Tour", poster: "M Pokora", category: "Concerts", date: "ven. 25 sept. · 20h", dateEn: "Fri. 25 Sep. · 20:00", venue: "Zénith de Lille", publicPrice: 65, groupPrice: 55, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.zenithdelille.com/evenement/m-pokora-5/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2025/11/affiche-adrenaline-e1764517185454.jpg" },
-        { city: "Lille", title: "Zed", poster: "Zed", category: "Clubs", date: "ven. 2 oct. · 20h", dateEn: "Fri. 2 Oct. · 20:00", venue: "Le Flow · Lille", publicPrice: 25, groupPrice: 22, current: 4, minimum: 6, theme: "club", sourceUrl: "https://shotgun.live/fr/events/zed-lille", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Car_16%3A9%2Cw_3840/fl_lossy/f_auto/q_auto/c_limit%2Cf_auto%2Cfl_lossy%2Cq_auto%2Cw_1920/v1780912745/production/artworks/Fichier_2MONTAGE_cdranw" },
-        { city: "Lille", title: "PLK — Tour 2026", poster: "PLK", category: "Concerts", date: "jeu. 8 oct. · 20h", dateEn: "Thu. 8 Oct. · 20:00", venue: "Zénith de Lille", publicPrice: 49, groupPrice: 42, current: 6, minimum: 7, theme: "concert", sourceUrl: "https://www.zenithdelille.com/evenement/plk/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2025/10/POST-PLK-LILLE-2026-1-scaled.jpg" },
-        { city: "Lille", title: "Florent Pagny — 65 Tour", poster: "Florent Pagny", category: "Concerts", date: "mar. 13 oct. · 20h", dateEn: "Tue. 13 Oct. · 20:00", venue: "Zénith de Lille", publicPrice: 65, groupPrice: 55, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.zenithdelille.com/evenement/florent-pagny-2/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2026/03/FP-LILLE-1080x1350-1.jpg" },
-        { city: "Lille", title: "Kodz × Blizzard Festival", poster: "Blizzard", category: "Festivals", date: "ven. 16–dim. 18 oct.", dateEn: "Fri. 16–Sun. 18 Oct.", venue: "Kodz · Englos", publicPrice: 40, groupPrice: 34, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://shotgun.live/fr/festivals/blizzardfestival", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_384/fl_lossy/f_auto/q_5/dev/artworks/blizzard_festival_1920x1080_hs4zzk.png" },
-        { city: "Lille", title: "LOSC Lille vs Galatasaray", poster: "LOSC · Gala", category: "Sport", date: "mer. 21 oct. · 18h45", dateEn: "Wed. 21 Oct. · 18:45", venue: "Decathlon Arena · Villeneuve-d'Ascq", publicPrice: 58, groupPrice: 50, current: 7, minimum: 8, theme: "football", sourceUrl: "https://www.losc.fr/actualites/2026-09-10/uefa-champions-league-ouverture-du-pack-3-matchs-ce-jour-12h", imageUrl: "https://www.losc.fr/sites/default/files/styles/2_1_small_1x_768x384_mc/public/media/images/P3M_GENERIQUE_16-9%20JE%20RESERVE.png?h=2538f4e7&itok=RKn7RoA6" },
-        { city: "Lille", title: "Lara Fabian — Je suis là", poster: "Lara Fabian", category: "Concerts", date: "dim. 25 oct. · 18h", dateEn: "Sun. 25 Oct. · 18:00", venue: "Zénith de Lille", publicPrice: 69, groupPrice: 59, current: 4, minimum: 6, theme: "concert", sourceUrl: "https://www.zenithdelille.com/en/event/lara-fabien/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2025/12/LARA-FABIAN-STORY-1-e1765984322630.jpg" },
-        { city: "Lille", title: "Josman — DPC Tour", poster: "Josman", category: "Concerts", date: "jeu. 29 oct. · 20h", dateEn: "Thu. 29 Oct. · 20:00", venue: "Zénith de Lille", publicPrice: 45, groupPrice: 38, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.zenithdelille.com/evenement/josman/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2026/02/FEED.jpg" },
-        { city: "Lille", title: "LOSC Lille vs RC Lens", poster: "LOSC · Lens", category: "Sport", date: "ven. 30 oct. · 21h05", dateEn: "Fri. 30 Oct. · 21:05", venue: "Decathlon Arena · Villeneuve-d'Ascq", publicPrice: 52, groupPrice: 45, current: 8, minimum: 8, theme: "football", sourceUrl: "https://www.losc.fr/actualites/2026-09-15/lens-lyon-marseille-monaco-le-meilleur-de-la-ligue-1-domicile-avec-le-pack-4-matchs", imageUrl: "https://www.losc.fr/sites/default/files/styles/2_1_small_1x_768x384_mc/public/media/images/PACK5MATCHS_16-9_0.png?itok=Bh3lypo4" },
-        { city: "Lille", title: "Jeff Panacloc — The Jeff Panacloc Company", poster: "Jeff Panacloc", category: "Humour", date: "ven. 30 oct. · 20h", dateEn: "Fri. 30 Oct. · 20:00", venue: "Zénith de Lille", publicPrice: 45, groupPrice: 38, current: 6, minimum: 7, theme: "humour", sourceUrl: "https://www.zenithdelille.com/evenement/jeff-panacloc-2/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2026/01/Jeff-Panacloc-Company-2026-post-1080x1350-lille-draft1-scaled.jpg" },
+        { city: "Lille", title: "M Pokora — Adrénaline Tour", poster: "M Pokora", category: "Concerts", date: "ven. 25 sept. · 20h", dateEn: "Fri. 25 Sep. · 20:00", venue: "Zénith de Lille", publicPrice: 65, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.zenithdelille.com/evenement/m-pokora-5/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2025/11/affiche-adrenaline-e1764517185454.jpg" },
+        { city: "Lille", title: "Zed", poster: "Zed", category: "Clubs", date: "ven. 2 oct. · 20h", dateEn: "Fri. 2 Oct. · 20:00", venue: "Le Flow · Lille", publicPrice: 25, current: 4, minimum: 6, theme: "club", sourceUrl: "https://shotgun.live/fr/events/zed-lille", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Car_16%3A9%2Cw_3840/fl_lossy/f_auto/q_auto/c_limit%2Cf_auto%2Cfl_lossy%2Cq_auto%2Cw_1920/v1780912745/production/artworks/Fichier_2MONTAGE_cdranw" },
+        { city: "Lille", title: "PLK — Tour 2026", poster: "PLK", category: "Concerts", date: "jeu. 8 oct. · 20h", dateEn: "Thu. 8 Oct. · 20:00", venue: "Zénith de Lille", publicPrice: 49, current: 6, minimum: 7, theme: "concert", sourceUrl: "https://www.zenithdelille.com/evenement/plk/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2025/10/POST-PLK-LILLE-2026-1-scaled.jpg" },
+        { city: "Lille", title: "Florent Pagny — 65 Tour", poster: "Florent Pagny", category: "Concerts", date: "mar. 13 oct. · 20h", dateEn: "Tue. 13 Oct. · 20:00", venue: "Zénith de Lille", publicPrice: 65, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.zenithdelille.com/evenement/florent-pagny-2/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2026/03/FP-LILLE-1080x1350-1.jpg" },
+        { city: "Lille", title: "Kodz × Blizzard Festival", poster: "Blizzard", category: "Festivals", date: "ven. 16–dim. 18 oct.", dateEn: "Fri. 16–Sun. 18 Oct.", venue: "Kodz · Englos", publicPrice: 40, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://shotgun.live/fr/festivals/blizzardfestival", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_384/fl_lossy/f_auto/q_5/dev/artworks/blizzard_festival_1920x1080_hs4zzk.png" },
+        { city: "Lille", title: "LOSC Lille vs Galatasaray", poster: "LOSC · Gala", category: "Sport", date: "mer. 21 oct. · 18h45", dateEn: "Wed. 21 Oct. · 18:45", venue: "Decathlon Arena · Villeneuve-d'Ascq", publicPrice: 58, current: 7, minimum: 8, theme: "football", sourceUrl: "https://www.losc.fr/actualites/2026-09-10/uefa-champions-league-ouverture-du-pack-3-matchs-ce-jour-12h", imageUrl: "https://www.losc.fr/sites/default/files/styles/2_1_small_1x_768x384_mc/public/media/images/P3M_GENERIQUE_16-9%20JE%20RESERVE.png?h=2538f4e7&itok=RKn7RoA6" },
+        { city: "Lille", title: "Lara Fabian — Je suis là", poster: "Lara Fabian", category: "Concerts", date: "dim. 25 oct. · 18h", dateEn: "Sun. 25 Oct. · 18:00", venue: "Zénith de Lille", publicPrice: 69, current: 4, minimum: 6, theme: "concert", sourceUrl: "https://www.zenithdelille.com/en/event/lara-fabien/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2025/12/LARA-FABIAN-STORY-1-e1765984322630.jpg" },
+        { city: "Lille", title: "Josman — DPC Tour", poster: "Josman", category: "Concerts", date: "jeu. 29 oct. · 20h", dateEn: "Thu. 29 Oct. · 20:00", venue: "Zénith de Lille", publicPrice: 45, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.zenithdelille.com/evenement/josman/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2026/02/FEED.jpg" },
+        { city: "Lille", title: "LOSC Lille vs RC Lens", poster: "LOSC · Lens", category: "Sport", date: "ven. 30 oct. · 21h05", dateEn: "Fri. 30 Oct. · 21:05", venue: "Decathlon Arena · Villeneuve-d'Ascq", publicPrice: 52, current: 8, minimum: 8, theme: "football", sourceUrl: "https://www.losc.fr/actualites/2026-09-15/lens-lyon-marseille-monaco-le-meilleur-de-la-ligue-1-domicile-avec-le-pack-4-matchs", imageUrl: "https://www.losc.fr/sites/default/files/styles/2_1_small_1x_768x384_mc/public/media/images/PACK5MATCHS_16-9_0.png?itok=Bh3lypo4" },
+        { city: "Lille", title: "Jeff Panacloc — The Jeff Panacloc Company", poster: "Jeff Panacloc", category: "Humour", date: "ven. 30 oct. · 20h", dateEn: "Fri. 30 Oct. · 20:00", venue: "Zénith de Lille", publicPrice: 45, current: 6, minimum: 7, theme: "humour", sourceUrl: "https://www.zenithdelille.com/evenement/jeff-panacloc-2/", imageUrl: "https://www.zenithdelille.com/wp-content/uploads/sites/2/2026/01/Jeff-Panacloc-Company-2026-post-1080x1350-lille-draft1-scaled.jpg" },
 
-        { city: "Marseille", title: "Devin Townsend — Metamorphosis", poster: "Devin Townsend", category: "Concerts", date: "mer. 23 sept. · 20h", dateEn: "Wed. 23 Sep. · 20:00", venue: "Cepac Silo", publicPrice: 42, groupPrice: 36, current: 4, minimum: 6, theme: "concert", sourceUrl: "https://adamconcerts.com/programmation/pop-rock-rap/", imageUrl: "https://adamconcerts.com/wp-content/uploads/2026/05/DT_marseille_460x650_manif.jpg" },
-        { city: "Marseille", title: "The Sisters of Mercy", poster: "Sisters of Mercy", category: "Concerts", date: "jeu. 1 oct. · 20h", dateEn: "Thu. 1 Oct. · 20:00", venue: "Cepac Silo", publicPrice: 49, groupPrice: 42, current: 6, minimum: 7, theme: "concert", sourceUrl: "https://www.cepacsilo-marseille.fr/evenement/the-sisters-of-mercy/", imageUrl: "https://www.cepacsilo-marseille.fr/wp/wp-content/uploads/sites/6/2026/02/1080x1920-tsom-marseille-350x524.jpg" },
-        { city: "Marseille", title: "Sénégal vs Comores", poster: "Sénégal · Comores", category: "Sport", date: "dim. 4 oct. · 15h", dateEn: "Sun. 4 Oct. · 15:00", venue: "CEPAC Vélodrome", publicPrice: 28, groupPrice: 24, current: 8, minimum: 10, theme: "football", sourceUrl: "https://www.cepacvelodrome.com/events/soprano/senegal-comores-e43.html", imageUrl: "https://www.cepacvelodrome.com/upload/evenements/m2-43-095739.png" },
-        { city: "Marseille", title: "FOREVER NU!", poster: "Forever Nu", category: "Clubs", date: "dim. 11 oct. · 20h30", dateEn: "Sun. 11 Oct. · 20:30", venue: "Le Molotov", publicPrice: 26, groupPrice: 22, current: 3, minimum: 5, theme: "club", sourceUrl: "https://lemolotov.com/events/forever-nu/", imageUrl: "https://api.cloudly.space/resize/cropratio/640/640/75/aHR0cHM6Ly9zdGF0aWMuYXBpZGFlLXRvdXJpc21lLmNvbS9maWxlc3RvcmUvb2JqZXRzLXRvdXJpc3RpcXVlcy9pbWFnZXMvMjQwLzEwMy8zODEwMzAyNC5qcGc%3D/image.webp" },
-        { city: "Marseille", title: "Autechre", poster: "Autechre", category: "Clubs", date: "mar. 13 oct. · 19h30", dateEn: "Tue. 13 Oct. · 19:30", venue: "Cabaret Aléatoire", publicPrice: 30, groupPrice: 26, current: 4, minimum: 6, theme: "club", sourceUrl: "https://www.fnacspectacles.com/event/autechre-cabaret-aleatoire-marseille-03-21008056/", imageUrl: "https://images.ra.co/f2a76e86db21bc5f31d27f20b985f9af4c47d9cc.jpg" },
-        { city: "Marseille", title: "Syndrome 81 + Orgueil", poster: "Syndrome 81", category: "Concerts", date: "jeu. 22 oct. · 20h30", dateEn: "Thu. 22 Oct. · 20:30", venue: "Le Molotov", publicPrice: 25, groupPrice: 22, current: 5, minimum: 6, theme: "concert", sourceUrl: "https://lemolotov.com/events/syndrome-81-guest/", imageUrl: "https://www.myprovence.fr/sites/default/files/poi/7688716/35788038_2026-02-19T15343409400038103424.jpg" },
-        { city: "Marseille", title: "Amine Radi — La Suivette", poster: "Amine Radi", category: "Humour", date: "sam. 17 oct. · 20h30", dateEn: "Sat. 17 Oct. · 20:30", venue: "Cepac Silo · Marseille 2e", publicPrice: 45, groupPrice: 38, current: 5, minimum: 7, theme: "humour", sourceUrl: "https://www.cepacsilo-marseille.fr/evenement/amine-radi/", imageUrl: "https://www.cepacsilo-marseille.fr/wp/wp-content/uploads/sites/6/2024/05/V2-AFFICHE-AMINE-RADI-350x524.jpg" },
-        { city: "Marseille", title: "Tina Arena — En concert", poster: "Tina Arena", category: "Concerts", date: "mer. 21 oct. · 20h", dateEn: "Wed. 21 Oct. · 20:00", venue: "Cepac Silo · Marseille 2e", publicPrice: 59, groupPrice: 54, current: 4, minimum: 6, theme: "concert", sourceUrl: "https://www.cepacsilo-marseille.fr/evenement/tina-arena/", imageUrl: "https://www.cepacsilo-marseille.fr/wp/wp-content/uploads/sites/6/2025/02/TINA-ARENA-VISUEL-DEF-VIERGE-40X60-350x524.jpg" },
+        { city: "Marseille", title: "Devin Townsend — Metamorphosis", poster: "Devin Townsend", category: "Concerts", date: "mer. 23 sept. · 20h", dateEn: "Wed. 23 Sep. · 20:00", venue: "Cepac Silo", publicPrice: 42, current: 4, minimum: 6, theme: "concert", sourceUrl: "https://adamconcerts.com/programmation/pop-rock-rap/", imageUrl: "https://adamconcerts.com/wp-content/uploads/2026/05/DT_marseille_460x650_manif.jpg" },
+        { city: "Marseille", title: "The Sisters of Mercy", poster: "Sisters of Mercy", category: "Concerts", date: "jeu. 1 oct. · 20h", dateEn: "Thu. 1 Oct. · 20:00", venue: "Cepac Silo", publicPrice: 49, current: 6, minimum: 7, theme: "concert", sourceUrl: "https://www.cepacsilo-marseille.fr/evenement/the-sisters-of-mercy/", imageUrl: "https://www.cepacsilo-marseille.fr/wp/wp-content/uploads/sites/6/2026/02/1080x1920-tsom-marseille-350x524.jpg" },
+        { city: "Marseille", title: "Sénégal vs Comores", poster: "Sénégal · Comores", category: "Sport", date: "dim. 4 oct. · 15h", dateEn: "Sun. 4 Oct. · 15:00", venue: "CEPAC Vélodrome", publicPrice: 28, current: 8, minimum: 10, theme: "football", sourceUrl: "https://www.cepacvelodrome.com/events/soprano/senegal-comores-e43.html", imageUrl: "https://www.cepacvelodrome.com/upload/evenements/m2-43-095739.png" },
+        { city: "Marseille", title: "FOREVER NU!", poster: "Forever Nu", category: "Clubs", date: "dim. 11 oct. · 20h30", dateEn: "Sun. 11 Oct. · 20:30", venue: "Le Molotov", publicPrice: 26, current: 3, minimum: 5, theme: "club", sourceUrl: "https://lemolotov.com/events/forever-nu/", imageUrl: "https://api.cloudly.space/resize/cropratio/640/640/75/aHR0cHM6Ly9zdGF0aWMuYXBpZGFlLXRvdXJpc21lLmNvbS9maWxlc3RvcmUvb2JqZXRzLXRvdXJpc3RpcXVlcy9pbWFnZXMvMjQwLzEwMy8zODEwMzAyNC5qcGc%3D/image.webp" },
+        { city: "Marseille", title: "Autechre", poster: "Autechre", category: "Clubs", date: "mar. 13 oct. · 19h30", dateEn: "Tue. 13 Oct. · 19:30", venue: "Cabaret Aléatoire", publicPrice: 30, current: 4, minimum: 6, theme: "club", sourceUrl: "https://www.fnacspectacles.com/event/autechre-cabaret-aleatoire-marseille-03-21008056/", imageUrl: "https://images.ra.co/f2a76e86db21bc5f31d27f20b985f9af4c47d9cc.jpg" },
+        { city: "Marseille", title: "Syndrome 81 + Orgueil", poster: "Syndrome 81", category: "Concerts", date: "jeu. 22 oct. · 20h30", dateEn: "Thu. 22 Oct. · 20:30", venue: "Le Molotov", publicPrice: 25, current: 5, minimum: 6, theme: "concert", sourceUrl: "https://lemolotov.com/events/syndrome-81-guest/", imageUrl: "https://www.myprovence.fr/sites/default/files/poi/7688716/35788038_2026-02-19T15343409400038103424.jpg" },
+        { city: "Marseille", title: "Amine Radi — La Suivette", poster: "Amine Radi", category: "Humour", date: "sam. 17 oct. · 20h30", dateEn: "Sat. 17 Oct. · 20:30", venue: "Cepac Silo · Marseille 2e", publicPrice: 45, current: 5, minimum: 7, theme: "humour", sourceUrl: "https://www.cepacsilo-marseille.fr/evenement/amine-radi/", imageUrl: "https://www.cepacsilo-marseille.fr/wp/wp-content/uploads/sites/6/2024/05/V2-AFFICHE-AMINE-RADI-350x524.jpg" },
+        { city: "Marseille", title: "Tina Arena — En concert", poster: "Tina Arena", category: "Concerts", date: "mer. 21 oct. · 20h", dateEn: "Wed. 21 Oct. · 20:00", venue: "Cepac Silo · Marseille 2e", publicPrice: 59, current: 4, minimum: 6, theme: "concert", sourceUrl: "https://www.cepacsilo-marseille.fr/evenement/tina-arena/", imageUrl: "https://www.cepacsilo-marseille.fr/wp/wp-content/uploads/sites/6/2025/02/TINA-ARENA-VISUEL-DEF-VIERGE-40X60-350x524.jpg" },
 
-        { city: "Bordeaux", title: "INTERSPORT HYROX Bordeaux", poster: "HYROX", category: "Sport", date: "mer. 30 sept.–dim. 4 oct.", dateEn: "Wed. 30 Sep.–Sun. 4 Oct.", venue: "Parc des Expositions Bordeaux-Lac", publicPrice: 70, groupPrice: 60, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://hyroxfrance.com/fr/event/intersport-hyrox-bordeaux/", imageUrl: "https://maintain.hyrox.com/wp-content/uploads/2025/03/Bordeaux_City_Logo_White_Intersport.png", imageFit: "contain" },
-        { city: "Bordeaux", title: "UBB vs Lyon", poster: "UBB · Lyon", category: "Sport", date: "sam. 3 oct. · 14h30", dateEn: "Sat. 3 Oct. · 14:30", venue: "Stade Chaban-Delmas", publicPrice: 35, groupPrice: 30, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.ubbrugby.com/equipes/equipe-premiere/calendrier-resultats.html", imageUrl: "https://www.ubbrugby.com/application/assets/img/logo-ubb-footer-240x174.png?2025=", secondaryImageUrl: "https://media.api.idalgo.info/Sport/Rugby/Team/Logo/150x150/logo_171.png" },
-        { city: "Bordeaux", title: "Trial Indoor — Legend Cup", poster: "Legend Cup", category: "Sport", date: "ven. 9 oct. · 20h45", dateEn: "Fri. 9 Oct. · 20:45", venue: "Arkéa Arena", publicPrice: 46, groupPrice: 39, current: 5, minimum: 7, theme: "sport", sourceUrl: "https://www.arkeaarena.com/evenements/trial-indoor-international-legend-cup-09-octobre-2026", imageUrl: "https://www.arkeaarena.com/_next/image?q=75&url=https%3A%2F%2Fcontent.arkeaarena.com%2Fuploads%2Flarge_Site_Rename_Event_name_1b1412f973.jpg&w=3840" },
-        { city: "Bordeaux", title: "Lynda Lemay & Jean-Félix Lalanne", poster: "Lynda Lemay", category: "Concerts", date: "mar. 13 oct. · 20h30", dateEn: "Tue. 13 Oct. · 20:30", venue: "Théâtre Fémina", publicPrice: 48, groupPrice: 41, current: 5, minimum: 6, theme: "concert", sourceUrl: "https://theatrefemina.com/evenement/lynda-lemay-et-jean-felix-lalanne/", imageUrl: "https://theatrefemina.com/wp-content/uploads/11bf9c93-64db-48c7-9c1d-3ae1fa170c5e-scaled.jpeg" },
-        { city: "Bordeaux", title: "Sonora Bordeaux Anniversary", poster: "Sonora", category: "Festivals", date: "ven. 16–sam. 17 oct.", dateEn: "Fri. 16–Sat. 17 Oct.", venue: "Parc des Expositions", publicPrice: 55, groupPrice: 47, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://shotgun.live/fr/events/sonora-bordeaux", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_384/fl_lossy/f_auto/q_5/production/artworks/SONORA_BORDEAUX_-_1920x1080_wytexl.jpg" },
-        { city: "Bordeaux", title: "Pink Martini", poster: "Pink Martini", category: "Concerts", date: "ven. 23 oct. · 20h30", dateEn: "Fri. 23 Oct. · 20:30", venue: "Théâtre Fémina", publicPrice: 55, groupPrice: 47, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://theatrefemina.com/evenement/pink-martini/", imageUrl: "https://theatrefemina.com/wp-content/uploads/22_0504_Pink_Martini-1171_v1a-web-scaled.jpg" },
-        { city: "Bordeaux", title: "Malik Bentalha — Nouveau Monde", poster: "Malik Bentalha", category: "Humour", date: "ven. 16 oct. · 20h30", dateEn: "Fri. 16 Oct. · 20:30", venue: "Arkéa Arena · Floirac", publicPrice: 49, groupPrice: 42, current: 5, minimum: 7, theme: "humour", sourceUrl: "https://www.arkeaarena.com/evenements/malik-bentalha-nouveau-monde-16-octobre-2026-billetterie-bordeaux", imageUrl: "https://www.arkeaarena.com/_next/image?q=75&url=https%3A%2F%2Fcontent.arkeaarena.com%2Fuploads%2FAA_Banner_Malik_8aa1b81189.jpg&w=3840" },
-        { city: "Bordeaux", title: "OrelSan — En concert", poster: "OrelSan", category: "Concerts", date: "lun. 26 oct. · 19h30", dateEn: "Mon. 26 Oct. · 19:30", venue: "Arkéa Arena · Floirac", publicPrice: 55, groupPrice: 47, current: 7, minimum: 8, theme: "concert", sourceUrl: "https://www.arkeaarena.com/evenements/orelsan-en-concert-26-octobre-au-27-octobre-2026-billetterie-bordeaux", imageUrl: "https://www.arkeaarena.com/_next/image?q=75&url=https%3A%2F%2Fcontent.arkeaarena.com%2Fuploads%2Fbanner_orelsan_2_f1512a61d5.jpg&w=3840" },
+        { city: "Bordeaux", title: "INTERSPORT HYROX Bordeaux", poster: "HYROX", category: "Sport", date: "mer. 30 sept.–dim. 4 oct.", dateEn: "Wed. 30 Sep.–Sun. 4 Oct.", venue: "Parc des Expositions Bordeaux-Lac", publicPrice: 70, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://hyroxfrance.com/fr/event/intersport-hyrox-bordeaux/", imageUrl: "https://maintain.hyrox.com/wp-content/uploads/2025/03/Bordeaux_City_Logo_White_Intersport.png", imageFit: "contain" },
+        { city: "Bordeaux", title: "UBB vs Lyon", poster: "UBB · Lyon", category: "Sport", date: "sam. 3 oct. · 14h30", dateEn: "Sat. 3 Oct. · 14:30", venue: "Stade Chaban-Delmas", publicPrice: 35, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.ubbrugby.com/equipes/equipe-premiere/calendrier-resultats.html", imageUrl: "https://www.ubbrugby.com/application/assets/img/logo-ubb-footer-240x174.png?2025=", secondaryImageUrl: "https://media.api.idalgo.info/Sport/Rugby/Team/Logo/150x150/logo_171.png" },
+        { city: "Bordeaux", title: "Trial Indoor — Legend Cup", poster: "Legend Cup", category: "Sport", date: "ven. 9 oct. · 20h45", dateEn: "Fri. 9 Oct. · 20:45", venue: "Arkéa Arena", publicPrice: 46, current: 5, minimum: 7, theme: "sport", sourceUrl: "https://www.arkeaarena.com/evenements/trial-indoor-international-legend-cup-09-octobre-2026", imageUrl: "https://www.arkeaarena.com/_next/image?q=75&url=https%3A%2F%2Fcontent.arkeaarena.com%2Fuploads%2Flarge_Site_Rename_Event_name_1b1412f973.jpg&w=3840" },
+        { city: "Bordeaux", title: "Lynda Lemay & Jean-Félix Lalanne", poster: "Lynda Lemay", category: "Concerts", date: "mar. 13 oct. · 20h30", dateEn: "Tue. 13 Oct. · 20:30", venue: "Théâtre Fémina", publicPrice: 48, current: 5, minimum: 6, theme: "concert", sourceUrl: "https://theatrefemina.com/evenement/lynda-lemay-et-jean-felix-lalanne/", imageUrl: "https://theatrefemina.com/wp-content/uploads/11bf9c93-64db-48c7-9c1d-3ae1fa170c5e-scaled.jpeg" },
+        { city: "Bordeaux", title: "Sonora Bordeaux Anniversary", poster: "Sonora", category: "Festivals", date: "ven. 16–sam. 17 oct.", dateEn: "Fri. 16–Sat. 17 Oct.", venue: "Parc des Expositions", publicPrice: 55, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://shotgun.live/fr/events/sonora-bordeaux", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_384/fl_lossy/f_auto/q_5/production/artworks/SONORA_BORDEAUX_-_1920x1080_wytexl.jpg" },
+        { city: "Bordeaux", title: "Pink Martini", poster: "Pink Martini", category: "Concerts", date: "ven. 23 oct. · 20h30", dateEn: "Fri. 23 Oct. · 20:30", venue: "Théâtre Fémina", publicPrice: 55, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://theatrefemina.com/evenement/pink-martini/", imageUrl: "https://theatrefemina.com/wp-content/uploads/22_0504_Pink_Martini-1171_v1a-web-scaled.jpg" },
+        { city: "Bordeaux", title: "Malik Bentalha — Nouveau Monde", poster: "Malik Bentalha", category: "Humour", date: "ven. 16 oct. · 20h30", dateEn: "Fri. 16 Oct. · 20:30", venue: "Arkéa Arena · Floirac", publicPrice: 49, current: 5, minimum: 7, theme: "humour", sourceUrl: "https://www.arkeaarena.com/evenements/malik-bentalha-nouveau-monde-16-octobre-2026-billetterie-bordeaux", imageUrl: "https://www.arkeaarena.com/_next/image?q=75&url=https%3A%2F%2Fcontent.arkeaarena.com%2Fuploads%2FAA_Banner_Malik_8aa1b81189.jpg&w=3840" },
+        { city: "Bordeaux", title: "OrelSan — En concert", poster: "OrelSan", category: "Concerts", date: "lun. 26 oct. · 19h30", dateEn: "Mon. 26 Oct. · 19:30", venue: "Arkéa Arena · Floirac", publicPrice: 55, current: 7, minimum: 8, theme: "concert", sourceUrl: "https://www.arkeaarena.com/evenements/orelsan-en-concert-26-octobre-au-27-octobre-2026-billetterie-bordeaux", imageUrl: "https://www.arkeaarena.com/_next/image?q=75&url=https%3A%2F%2Fcontent.arkeaarena.com%2Fuploads%2Fbanner_orelsan_2_f1512a61d5.jpg&w=3840" },
 
-        { city: "Nantes", title: "Nantes Basket Hermine vs Quimper", poster: "Nantes · Quimper", category: "Sport", date: "ven. 2 oct. · 20h", dateEn: "Fri. 2 Oct. · 20:00", venue: "La Trocardière · Rezé", publicPrice: 18, groupPrice: 15, current: 5, minimum: 6, theme: "sport", sourceUrl: "https://billetterie.nantes-basket.com/fr", imageUrl: "https://wiremind-evy-public-data.s3.eu-west-3.amazonaws.com/team-data/basketball/FR/Nantes/logo.png", secondaryImageUrl: "https://wiremind-evy-public-data.s3.eu-west-3.amazonaws.com/team-data/basketball/FR/Quimper/logo.png" },
-        { city: "Nantes", title: "FAT FREDDY'S DROP", poster: "Fat Freddy's Drop", category: "Concerts", date: "ven. 9 oct. · 20h", dateEn: "Fri. 9 Oct. · 20:00", venue: "Zénith Nantes Métropole", publicPrice: 45, groupPrice: 39, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.zenith-nantesmetropole.com/shows/FAT%20FREDDY%27S%20DROP-21003", imageUrl: "https://www.reggae.fr/uploads/agenda_photos/DAT_24315.jpg" },
-        { city: "Nantes", title: "Velysia Festival", poster: "Velysia", category: "Festivals", date: "ven. 9–sam. 10 oct.", dateEn: "Fri. 9–Sat. 10 Oct.", venue: "Île de Nantes", publicPrice: 48, groupPrice: 41, current: 9, minimum: 10, theme: "festival", sourceUrl: "https://r.shotgun.live/fr/events/velysia-festival-2026", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_384/fl_lossy/f_auto/q_5/c_limit%2Cf_auto%2Cfl_lossy%2Cq_auto%2Cw_1920/v1786543588/production/artworks/COVER_FINAL_ARTWORK_VELYSIA_jylzye" },
-        { city: "Nantes", title: "FC Nantes vs Stade de Reims", poster: "Nantes · Reims", category: "Sport", date: "sam. 10 oct. · 14h", dateEn: "Sat. 10 Oct. · 14:00", venue: "Stade de la Beaujoire", publicPrice: 28, groupPrice: 24, current: 6, minimum: 8, theme: "football", sourceUrl: "https://www.fcnantes.com/articles/article2809.php?num=49437", imageUrl: "https://www.fcnantes.com/images/Blasons/blasonJaune.png", secondaryImageUrl: "https://www.fcnantes.com/images/Blasons/reims.png" },
-        { city: "Nantes", title: "Autechre", poster: "Autechre", category: "Clubs", date: "jeu. 15 oct. · 20h", dateEn: "Thu. 15 Oct. · 20:00", venue: "Le Lieu Unique", publicPrice: 32, groupPrice: 27, current: 4, minimum: 6, theme: "club", sourceUrl: "https://fr.ra.co/events/2321979", imageUrl: "https://images.ra.co/1a9f21e98c2981acb4e2c24d5dfaec2a72403f0a.png" },
-        { city: "Nantes", title: "Nantes Basket Hermine vs Rouen", poster: "Nantes · Rouen", category: "Sport", date: "ven. 16 oct. · 20h", dateEn: "Fri. 16 Oct. · 20:00", venue: "La Trocardière · Rezé", publicPrice: 18, groupPrice: 15, current: 5, minimum: 6, theme: "sport", sourceUrl: "https://billetterie.nantes-basket.com/fr", imageUrl: "https://wiremind-evy-public-data.s3.eu-west-3.amazonaws.com/team-data/basketball/FR/Nantes/logo.png", secondaryImageUrl: "https://wiremind-evy-public-data.s3.eu-west-3.amazonaws.com/team-data/basketball/FR/Rouen/logo.png" },
-        { city: "Nantes", title: "Folie's + Blou Feet", poster: "Folie's", category: "Concerts", date: "mer. 21 oct. · 20h", dateEn: "Wed. 21 Oct. · 20:00", venue: "Stereolux", publicPrice: 22, groupPrice: 19, current: 4, minimum: 6, theme: "concert", sourceUrl: "https://stereolux.org/agenda/folies", imageUrl: "https://stereolux.org/sites/stereolux/files/styles/auto_1920/public/2025-09/folies.png?itok=pytnImHh" },
-        { city: "Nantes", title: "Gaïa + DJ set Sarah Lapin", poster: "Gaïa", category: "Festivals", date: "ven. 23 oct.", dateEn: "Fri. 23 Oct.", venue: "Les Nefs · Île de Nantes", publicPrice: 20, groupPrice: 16, current: 5, minimum: 7, theme: "festival", sourceUrl: "https://metropole.nantes.fr/que-faire-a-nantes/agenda/39014963_lete-indien-aux-nefs-2026", imageUrl: "https://img.openagenda.com/u/715x0/main/8abaa4d858cf49a580764ba31437708e.base.image.jpg" },
-        { city: "Nantes", title: "Les Utopiales 2026", poster: "Les Utopiales", category: "Festivals", date: "jeu. 29 oct.–dim. 1 nov.", dateEn: "Thu. 29 Oct.–Sun. 1 Nov.", venue: "Cité des Congrès · Nantes", publicPrice: 18, groupPrice: 15, current: 6, minimum: 8, theme: "festival", sourceUrl: "https://metropole.nantes.fr/que-faire-a-nantes/agenda/74273531_les-utopiales-2026" },
+        { city: "Nantes", title: "Nantes Basket Hermine vs Quimper", poster: "Nantes · Quimper", category: "Sport", date: "ven. 2 oct. · 20h", dateEn: "Fri. 2 Oct. · 20:00", venue: "La Trocardière · Rezé", publicPrice: 18, current: 5, minimum: 6, theme: "sport", sourceUrl: "https://billetterie.nantes-basket.com/fr", imageUrl: "https://wiremind-evy-public-data.s3.eu-west-3.amazonaws.com/team-data/basketball/FR/Nantes/logo.png", secondaryImageUrl: "https://wiremind-evy-public-data.s3.eu-west-3.amazonaws.com/team-data/basketball/FR/Quimper/logo.png" },
+        { city: "Nantes", title: "FAT FREDDY'S DROP", poster: "Fat Freddy's Drop", category: "Concerts", date: "ven. 9 oct. · 20h", dateEn: "Fri. 9 Oct. · 20:00", venue: "Zénith Nantes Métropole", publicPrice: 45, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.zenith-nantesmetropole.com/shows/FAT%20FREDDY%27S%20DROP-21003", imageUrl: "https://www.reggae.fr/uploads/agenda_photos/DAT_24315.jpg" },
+        { city: "Nantes", title: "Velysia Festival", poster: "Velysia", category: "Festivals", date: "ven. 9–sam. 10 oct.", dateEn: "Fri. 9–Sat. 10 Oct.", venue: "Île de Nantes", publicPrice: 48, current: 9, minimum: 10, theme: "festival", sourceUrl: "https://r.shotgun.live/fr/events/velysia-festival-2026", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_384/fl_lossy/f_auto/q_5/c_limit%2Cf_auto%2Cfl_lossy%2Cq_auto%2Cw_1920/v1786543588/production/artworks/COVER_FINAL_ARTWORK_VELYSIA_jylzye" },
+        { city: "Nantes", title: "FC Nantes vs Stade de Reims", poster: "Nantes · Reims", category: "Sport", date: "sam. 10 oct. · 14h", dateEn: "Sat. 10 Oct. · 14:00", venue: "Stade de la Beaujoire", publicPrice: 28, current: 6, minimum: 8, theme: "football", sourceUrl: "https://www.fcnantes.com/articles/article2809.php?num=49437", imageUrl: "https://www.fcnantes.com/images/Blasons/blasonJaune.png", secondaryImageUrl: "https://www.fcnantes.com/images/Blasons/reims.png" },
+        { city: "Nantes", title: "Autechre", poster: "Autechre", category: "Clubs", date: "jeu. 15 oct. · 20h", dateEn: "Thu. 15 Oct. · 20:00", venue: "Le Lieu Unique", publicPrice: 32, current: 4, minimum: 6, theme: "club", sourceUrl: "https://fr.ra.co/events/2321979", imageUrl: "https://images.ra.co/1a9f21e98c2981acb4e2c24d5dfaec2a72403f0a.png" },
+        { city: "Nantes", title: "Nantes Basket Hermine vs Rouen", poster: "Nantes · Rouen", category: "Sport", date: "ven. 16 oct. · 20h", dateEn: "Fri. 16 Oct. · 20:00", venue: "La Trocardière · Rezé", publicPrice: 18, current: 5, minimum: 6, theme: "sport", sourceUrl: "https://billetterie.nantes-basket.com/fr", imageUrl: "https://wiremind-evy-public-data.s3.eu-west-3.amazonaws.com/team-data/basketball/FR/Nantes/logo.png", secondaryImageUrl: "https://wiremind-evy-public-data.s3.eu-west-3.amazonaws.com/team-data/basketball/FR/Rouen/logo.png" },
+        { city: "Nantes", title: "Folie's + Blou Feet", poster: "Folie's", category: "Concerts", date: "mer. 21 oct. · 20h", dateEn: "Wed. 21 Oct. · 20:00", venue: "Stereolux", publicPrice: 22, current: 4, minimum: 6, theme: "concert", sourceUrl: "https://stereolux.org/agenda/folies", imageUrl: "https://stereolux.org/sites/stereolux/files/styles/auto_1920/public/2025-09/folies.png?itok=pytnImHh" },
+        { city: "Nantes", title: "Gaïa + DJ set Sarah Lapin", poster: "Gaïa", category: "Festivals", date: "ven. 23 oct.", dateEn: "Fri. 23 Oct.", venue: "Les Nefs · Île de Nantes", publicPrice: 20, current: 5, minimum: 7, theme: "festival", sourceUrl: "https://metropole.nantes.fr/que-faire-a-nantes/agenda/39014963_lete-indien-aux-nefs-2026", imageUrl: "https://img.openagenda.com/u/715x0/main/8abaa4d858cf49a580764ba31437708e.base.image.jpg" },
+        { city: "Nantes", title: "Les Utopiales 2026", poster: "Les Utopiales", category: "Festivals", date: "jeu. 29 oct.–dim. 1 nov.", dateEn: "Thu. 29 Oct.–Sun. 1 Nov.", venue: "Cité des Congrès · Nantes", publicPrice: 18, current: 6, minimum: 8, theme: "festival", sourceUrl: "https://metropole.nantes.fr/que-faire-a-nantes/agenda/74273531_les-utopiales-2026" },
 
-        { city: "Strasbourg", title: "SIG Strasbourg vs Boulazac", poster: "SIG · Boulazac", category: "Sport", date: "sam. 3 oct. · 18h", dateEn: "Sat. 3 Oct. · 18:00", venue: "Rhenus Sport", publicPrice: 22, groupPrice: 18, current: 6, minimum: 7, theme: "sport", sourceUrl: "https://sigstrasbourg.fr/2026/09/prenez-vos-places-pour-les-premiers-matchs-de-la-saison", imageUrl: "https://sigstrasbourg.fr/sites/default/files/styles/tunnel/public/2026-09/BILLETTERIE%20SITE.png?itok=dXLY8Ign" },
-        { city: "Strasbourg", title: "Marathon Électronique Festival", poster: "Marathon", category: "Festivals", date: "sam. 3–dim. 4 oct.", dateEn: "Sat. 3–Sun. 4 Oct.", venue: "Lieux multiples · Strasbourg", publicPrice: 50, groupPrice: 43, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://shotgun.live/fr/events/marathon-electronique-festival", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_384/fl_lossy/f_auto/q_5/production/artworks/SHOTGUN_lodyfn.png" },
-        { city: "Strasbourg", title: "PACT + Birrd", poster: "PACT", category: "Clubs", date: "ven. 9 oct. · 20h", dateEn: "Fri. 9 Oct. · 20:00", venue: "La Laiterie · Grande Salle", publicPrice: 38, groupPrice: 32, current: 5, minimum: 7, theme: "club", sourceUrl: "https://www.artefact.org/la-laiterie/evenements/pact-joachim-pastor-joris-delacroix-teho/", imageUrl: "https://www.artefact.org/wp-content/uploads/2026/04/PACT-FOCUS-1024x481.jpg" },
-        { city: "Strasbourg", title: "M Pokora — Adrenaline Tour", poster: "M Pokora", category: "Concerts", date: "sam. 10 oct. · 20h", dateEn: "Sat. 10 Oct. · 20:00", venue: "Zénith de Strasbourg Europe", publicPrice: 55, groupPrice: 48, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/m-pokora/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2024/11/M.-Pokora_Amneville-350x524.jpg" },
-        { city: "Strasbourg", title: "Peter Doherty Full Band + Junior Brother", poster: "Peter Doherty", category: "Concerts", date: "mar. 13 oct. · 19h30", dateEn: "Tue. 13 Oct. · 19:30", venue: "La Laiterie · Grande Salle", publicPrice: 35, groupPrice: 30, current: 4, minimum: 6, theme: "concert", sourceUrl: "https://www.artefact.org/la-laiterie/evenements/peter-doherty-full-band/", imageUrl: "https://www.artefact.org/wp-content/uploads/2026/06/doherty-focus-avec-junior-brother-real.png" },
-        { city: "Strasbourg", title: "Christophe Maé", poster: "Christophe Maé", category: "Concerts", date: "sam. 17 oct. · 20h", dateEn: "Sat. 17 Oct. · 20:00", venue: "Zénith de Strasbourg Europe", publicPrice: 58, groupPrice: 50, current: 6, minimum: 7, theme: "concert", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/christophe-mae/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2022/10/Christophe-Mae_40x60_originale-350x524.jpg" },
-        { city: "Strasbourg", title: "Djadja & Dinaz", poster: "Djadja & Dinaz", category: "Concerts", date: "dim. 18 oct. · 18h", dateEn: "Sun. 18 Oct. · 18:00", venue: "Zénith de Strasbourg Europe", publicPrice: 45, groupPrice: 38, current: 6, minimum: 7, theme: "concert", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/djadja-dinaz/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2025/07/Djadja-Dinaz_40x60-350x524.jpg" },
-        { city: "Strasbourg", title: "Orelsan — Tour 2026", poster: "Orelsan", category: "Concerts", date: "mar. 20 oct. · 19h30", dateEn: "Tue. 20 Oct. · 19:30", venue: "Zénith de Strasbourg Europe", publicPrice: 59, groupPrice: 50, current: 7, minimum: 8, theme: "concert", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/orelsan/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2026/03/Orelsan_40x60_originale-1-350x524.png" },
-        { city: "Strasbourg", title: "Mustapha El Atrassi — Renaissance", poster: "Mustapha", category: "Humour", date: "sam. 24 oct. · 20h", dateEn: "Sat. 24 Oct. · 20:00", venue: "Zénith de Strasbourg Europe", publicPrice: 42, groupPrice: 36, current: 5, minimum: 6, theme: "humour", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/mustapha-el-atrassi/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2026/09/image001-350x524.jpg" },
-        { city: "Strasbourg", title: "Fakear — A Nice Place To Be", poster: "Fakear", category: "Clubs", date: "jeu. 29 oct. · 19h30", dateEn: "Thu. 29 Oct. · 19:30", venue: "La Laiterie · Grande Salle", publicPrice: 30, groupPrice: 26, current: 4, minimum: 6, theme: "club", sourceUrl: "https://www.artefact.org/la-laiterie/evenements/fakear2027/", imageUrl: "https://www.artefact.org/wp-content/uploads/2026/05/FAKEAR-FOCUS.jpg" },
-        { city: "Strasbourg", title: "Halloween 2026 — Lucid & Studio Saglio", poster: "Halloween", category: "Clubs", date: "ven. 30 oct.–dim. 1 nov.", dateEn: "Fri. 30 Oct.–Sun. 1 Nov.", venue: "Studio Saglio", publicPrice: 35, groupPrice: 30, current: 8, minimum: 10, theme: "club", sourceUrl: "https://shotgun.live/fr/festivals/halloween-2026-lucid-studio-saglio", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Car_16%3A9%2Cw_3840/fl_lossy/f_auto/q_auto/production/artworks/event_lyvfh0.png" },
-        { city: "Strasbourg", title: "ARES FC Strasbourg — MMA", poster: "ARES", category: "Sport", date: "sam. 31 oct. · 19h30", dateEn: "Sat. 31 Oct. · 19:30", venue: "Zénith de Strasbourg Europe", publicPrice: 49, groupPrice: 42, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/ares-strasbourg-mma/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2026/04/ARES-STRASBOURG_HOMEPAGE_1800x500px-1440x500.jpg" },
-        { city: "Strasbourg", title: "SIG Strasbourg vs Cholet Basket", poster: "SIG · Cholet", category: "Sport", date: "sam. 31 oct. · 18h30", dateEn: "Sat. 31 Oct. · 18:30", venue: "Rhenus Sport", publicPrice: 22, groupPrice: 18, current: 6, minimum: 7, theme: "sport", sourceUrl: "https://sigstrasbourg.fr/2026/09/prenez-vos-places-pour-les-premiers-matchs-de-la-saison", imageUrl: "https://sigstrasbourg.fr/sites/default/files/styles/max_1300x1300/public/2026-08/CALENDRIER%20J6%20YTB_0.png?itok=nVtGPjBR" }
+        { city: "Strasbourg", title: "SIG Strasbourg vs Boulazac", poster: "SIG · Boulazac", category: "Sport", date: "sam. 3 oct. · 18h", dateEn: "Sat. 3 Oct. · 18:00", venue: "Rhenus Sport", publicPrice: 22, current: 6, minimum: 7, theme: "sport", sourceUrl: "https://sigstrasbourg.fr/2026/09/prenez-vos-places-pour-les-premiers-matchs-de-la-saison", imageUrl: "https://sigstrasbourg.fr/sites/default/files/styles/tunnel/public/2026-09/BILLETTERIE%20SITE.png?itok=dXLY8Ign" },
+        { city: "Strasbourg", title: "Marathon Électronique Festival", poster: "Marathon", category: "Festivals", date: "sam. 3–dim. 4 oct.", dateEn: "Sat. 3–Sun. 4 Oct.", venue: "Lieux multiples · Strasbourg", publicPrice: 50, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://shotgun.live/fr/events/marathon-electronique-festival", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_384/fl_lossy/f_auto/q_5/production/artworks/SHOTGUN_lodyfn.png" },
+        { city: "Strasbourg", title: "PACT + Birrd", poster: "PACT", category: "Clubs", date: "ven. 9 oct. · 20h", dateEn: "Fri. 9 Oct. · 20:00", venue: "La Laiterie · Grande Salle", publicPrice: 38, current: 5, minimum: 7, theme: "club", sourceUrl: "https://www.artefact.org/la-laiterie/evenements/pact-joachim-pastor-joris-delacroix-teho/", imageUrl: "https://www.artefact.org/wp-content/uploads/2026/04/PACT-FOCUS-1024x481.jpg" },
+        { city: "Strasbourg", title: "M Pokora — Adrenaline Tour", poster: "M Pokora", category: "Concerts", date: "sam. 10 oct. · 20h", dateEn: "Sat. 10 Oct. · 20:00", venue: "Zénith de Strasbourg Europe", publicPrice: 55, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/m-pokora/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2024/11/M.-Pokora_Amneville-350x524.jpg" },
+        { city: "Strasbourg", title: "Peter Doherty Full Band + Junior Brother", poster: "Peter Doherty", category: "Concerts", date: "mar. 13 oct. · 19h30", dateEn: "Tue. 13 Oct. · 19:30", venue: "La Laiterie · Grande Salle", publicPrice: 35, current: 4, minimum: 6, theme: "concert", sourceUrl: "https://www.artefact.org/la-laiterie/evenements/peter-doherty-full-band/", imageUrl: "https://www.artefact.org/wp-content/uploads/2026/06/doherty-focus-avec-junior-brother-real.png" },
+        { city: "Strasbourg", title: "Christophe Maé", poster: "Christophe Maé", category: "Concerts", date: "sam. 17 oct. · 20h", dateEn: "Sat. 17 Oct. · 20:00", venue: "Zénith de Strasbourg Europe", publicPrice: 58, current: 6, minimum: 7, theme: "concert", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/christophe-mae/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2022/10/Christophe-Mae_40x60_originale-350x524.jpg" },
+        { city: "Strasbourg", title: "Djadja & Dinaz", poster: "Djadja & Dinaz", category: "Concerts", date: "dim. 18 oct. · 18h", dateEn: "Sun. 18 Oct. · 18:00", venue: "Zénith de Strasbourg Europe", publicPrice: 45, current: 6, minimum: 7, theme: "concert", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/djadja-dinaz/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2025/07/Djadja-Dinaz_40x60-350x524.jpg" },
+        { city: "Strasbourg", title: "Orelsan — Tour 2026", poster: "Orelsan", category: "Concerts", date: "mar. 20 oct. · 19h30", dateEn: "Tue. 20 Oct. · 19:30", venue: "Zénith de Strasbourg Europe", publicPrice: 59, current: 7, minimum: 8, theme: "concert", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/orelsan/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2026/03/Orelsan_40x60_originale-1-350x524.png" },
+        { city: "Strasbourg", title: "Mustapha El Atrassi — Renaissance", poster: "Mustapha", category: "Humour", date: "sam. 24 oct. · 20h", dateEn: "Sat. 24 Oct. · 20:00", venue: "Zénith de Strasbourg Europe", publicPrice: 42, current: 5, minimum: 6, theme: "humour", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/mustapha-el-atrassi/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2026/09/image001-350x524.jpg" },
+        { city: "Strasbourg", title: "Fakear — A Nice Place To Be", poster: "Fakear", category: "Clubs", date: "jeu. 29 oct. · 19h30", dateEn: "Thu. 29 Oct. · 19:30", venue: "La Laiterie · Grande Salle", publicPrice: 30, current: 4, minimum: 6, theme: "club", sourceUrl: "https://www.artefact.org/la-laiterie/evenements/fakear2027/", imageUrl: "https://www.artefact.org/wp-content/uploads/2026/05/FAKEAR-FOCUS.jpg" },
+        { city: "Strasbourg", title: "Halloween 2026 — Lucid & Studio Saglio", poster: "Halloween", category: "Clubs", date: "ven. 30 oct.–dim. 1 nov.", dateEn: "Fri. 30 Oct.–Sun. 1 Nov.", venue: "Studio Saglio", publicPrice: 35, current: 8, minimum: 10, theme: "club", sourceUrl: "https://shotgun.live/fr/festivals/halloween-2026-lucid-studio-saglio", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Car_16%3A9%2Cw_3840/fl_lossy/f_auto/q_auto/production/artworks/event_lyvfh0.png" },
+        { city: "Strasbourg", title: "ARES FC Strasbourg — MMA", poster: "ARES", category: "Sport", date: "sam. 31 oct. · 19h30", dateEn: "Sat. 31 Oct. · 19:30", venue: "Zénith de Strasbourg Europe", publicPrice: 49, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://www.zenith-strasbourg.fr/evenement/ares-strasbourg-mma/", imageUrl: "https://www.zenith-strasbourg.fr/wp/wp-content/uploads/sites/7/2026/04/ARES-STRASBOURG_HOMEPAGE_1800x500px-1440x500.jpg" },
+        { city: "Strasbourg", title: "SIG Strasbourg vs Cholet Basket", poster: "SIG · Cholet", category: "Sport", date: "sam. 31 oct. · 18h30", dateEn: "Sat. 31 Oct. · 18:30", venue: "Rhenus Sport", publicPrice: 22, current: 6, minimum: 7, theme: "sport", sourceUrl: "https://sigstrasbourg.fr/2026/09/prenez-vos-places-pour-les-premiers-matchs-de-la-saison", imageUrl: "https://sigstrasbourg.fr/sites/default/files/styles/max_1300x1300/public/2026-08/CALENDRIER%20J6%20YTB_0.png?itok=nVtGPjBR" }
       ];
 
       // Paris has a denser catalogue because its organisers and ticketing pages
@@ -1289,62 +1370,62 @@
       // Dates and source links were checked on 22 September 2026; all group
       // prices and group gauges below remain prototype simulations.
       events.push.apply(events, [
-        { city: "Paris", title: "Festival d’Automne 2026", poster: "Festival d’Automne", category: "Festivals", date: "mar. 22 sept.–jeu. 31 déc.", dateEn: "Tue. 22 Sep.–Thu. 31 Dec.", venue: "Plusieurs lieux · Paris", publicPrice: 28, groupPrice: 24, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://www.paris.fr/evenements/festival-d-automne-2026-tout-le-programme-123786", imageUrl: "https://cdn.paris.fr/qfapv4/2026/04/28/huge-256d3b54e1e96a14afa8f7b1917f2f9e.jpg" },
-        { city: "Paris", title: "ARES 43", poster: "ARES 43", category: "Sport", date: "ven. 25 sept. · 19h30", dateEn: "Fri. 25 Sep. · 19:30", venue: "adidas arena · Paris 18e", publicPrice: 42, groupPrice: 36, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.adidasarena.com/programmation", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/e24d9ef2-93f5-4bf5-8b17-1e231a68df10.jpeg" },
-        { city: "Paris", title: "L’Arc Paris — Saturday Night", poster: "L’Arc Paris", category: "Clubs", date: "sam. 26 sept. · 23h", dateEn: "Sat. 26 Sep. · 23:00", venue: "L’Arc · Paris 16e", publicPrice: 25, groupPrice: 21, current: 7, minimum: 9, theme: "club", sourceUrl: "https://www.clubbable.com/fr-FR/Paris/L%27Arc/26-sept.-2026", imageUrl: "https://media.alotea.com/l-arc-paris-1.webp" },
-        { city: "Paris", title: "Stade Français Paris vs LOU Rugby", poster: "Stade Français · LOU", category: "Sport", date: "sam. 26 sept. · 16h35", dateEn: "Sat. 26 Sep. · 16:35", venue: "Stade Jean-Bouin · Paris 16e", publicPrice: 34, groupPrice: 29, current: 5, minimum: 7, theme: "sport", sourceUrl: "https://billetterie.stade.fr/fr/calendrier", imageUrl: "https://billetterie.stade.fr/media/stade-francais-paris.png", secondaryImageUrl: "https://billetterie.stade.fr/media/lou-rugby.png" },
-        { city: "Paris", title: "Paris Basketball vs Partizan Belgrade", poster: "Paris · Partizan", category: "Sport", date: "mar. 29 sept. · 20h45", dateEn: "Tue. 29 Sep. · 20:45", venue: "adidas arena · Paris 18e", publicPrice: 38, groupPrice: 33, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/d5b23424-f26b-4f7f-8324-34c58fd37a76.jpg" },
-        { city: "Paris", title: "Paris FC Féminines vs Arsenal", poster: "Paris FC · Arsenal", category: "Sport", date: "mer. 30 sept. · 18h45", dateEn: "Wed. 30 Sep. · 18:45", venue: "Stade Jean-Bouin · Paris 16e", publicPrice: 26, groupPrice: 22, current: 5, minimum: 7, theme: "football", sourceUrl: "https://parisfc.fr/pro-feminin/ligue-des-champions-decouvrez-les-six-adversaires-du-paris-fc/", imageUrl: "https://parisfc.fr/wp-content/uploads/2026/09/Plan-de-travail-2.png" },
-        { city: "Paris", title: "Synthony", poster: "Synthony", category: "Clubs", date: "jeu. 1 oct. · 20h", dateEn: "Thu. 1 Oct. · 20:00", venue: "Zénith Paris – La Villette", publicPrice: 52, groupPrice: 44, current: 7, minimum: 8, theme: "club", sourceUrl: "https://le-zenith.com/shows/Synthony-21824", imageUrl: "https://le-zenith.com/media/cache/show_poster/media/uploads/show-poster/68d55eefbbee9604519266.png" },
-        { city: "Paris", title: "Paris Basketball vs Žalgiris Kaunas", poster: "Paris · Žalgiris", category: "Sport", date: "jeu. 1 oct. · 20h45", dateEn: "Thu. 1 Oct. · 20:45", venue: "adidas arena · Paris 18e", publicPrice: 38, groupPrice: 33, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/1330bd23-9080-45de-b2dd-87d3ffa09a9b.jpg" },
-        { city: "Paris", title: "Bérengère Krief — Sexe", poster: "Bérengère Krief", category: "Humour", date: "jeu. 1–sam. 3 oct.", dateEn: "Thu. 1–Sat. 3 Oct.", venue: "L’Olympia · Paris 9e", publicPrice: 45, groupPrice: 38, current: 4, minimum: 6, theme: "humour", sourceUrl: "https://berengerekrief.fr/", imageUrl: "https://berengerekrief.fr/cdn/shop/files/Section_hero_image.jpg?v=1743174311&width=2500" },
-        { city: "Paris", title: "Neg’ Marrons — 30 ans de carrière", poster: "Neg’ Marrons", category: "Concerts", date: "ven. 2 oct. · 20h", dateEn: "Fri. 2 Oct. · 20:00", venue: "Zénith Paris – La Villette", publicPrice: 42, groupPrice: 36, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://le-zenith.com/shows/Neg%27%20Marrons-21711", imageUrl: "https://le-zenith.com/media/cache/show_poster/media/uploads/show-poster/692f016291146922005717.png" },
-        { city: "Paris", title: "Deviance Paris Pride — Party + After", poster: "Deviance", category: "Clubs", date: "sam. 3 oct. · 23h", dateEn: "Sat. 3 Oct. · 23:00", venue: "WorkshoW · Paris", publicPrice: 27, groupPrice: 23, current: 8, minimum: 10, theme: "club", sourceUrl: "https://shotgun.live/en/events/deviance-pride-2", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_384/fl_lossy/f_auto/q_5/dev/artworks/COVER_SHOTGUN_ulimey.png" },
-        { city: "Paris", title: "Shrek, le musical", poster: "Shrek", category: "Théâtre", date: "sam. 3 oct.–dim. 17 janv.", dateEn: "Sat. 3 Oct.–Sun. 17 Jan.", venue: "Folies Bergère · Paris 9e", publicPrice: 55, groupPrice: 47, current: 5, minimum: 7, theme: "theatre", sourceUrl: "https://www.offi.fr/enfants/les-folies-bergere-2331/shrek-le-musical-104778.html", imageUrl: "https://files.offi.fr/programmation/3164539/images/1000/c322aecb986348b6c1c31ade8dfadd6f.jpg" },
-        { city: "Paris", title: "AEW Grand Slam Paris", poster: "AEW Grand Slam", category: "Sport", date: "mar. 6 oct. · 18h", dateEn: "Tue. 6 Oct. · 18:00", venue: "adidas arena · Paris 18e", publicPrice: 45, groupPrice: 38, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.adidasarena.com/programmation", imageUrl: "https://adidasarena.directus.app/assets/2c7becfa-56d4-42c7-a7fb-c7d4e9f66f2c?format=webp&quality=90&width=320" },
-        { city: "Paris", title: "Paris Basketball vs LDLC ASVEL", poster: "Paris · ASVEL", category: "Sport", date: "mer. 7 oct. · 20h45", dateEn: "Wed. 7 Oct. · 20:45", venue: "adidas arena · Paris 18e", publicPrice: 38, groupPrice: 33, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://adidasarena.directus.app/assets/43a17bf5-a4ab-44ab-b555-2d6bf2365a0e?format=webp&quality=90&width=320" },
-        { city: "Paris", title: "Apparat", poster: "Apparat", category: "Clubs", date: "ven. 9 oct. · 20h", dateEn: "Fri. 9 Oct. · 20:00", venue: "Élysée Montmartre · Paris 18e", publicPrice: 40, groupPrice: 34, current: 5, minimum: 7, theme: "club", sourceUrl: "https://www.places-concert.com/concert-303269/billets-apparat-elysee-montmartre-paris", imageUrl: "https://www.places-concert.com/images/visuels/events_apparat_elysee_montmartre_paris_0202021217.webp" },
-        { city: "Paris", title: "Paris Saint-Germain vs Le Mans FC", poster: "PSG · Le Mans", category: "Sport", date: "sam. 10 oct. · 20h45", dateEn: "Sat. 10 Oct. · 20:45", venue: "Parc des Princes · Paris 16e", publicPrice: 55, groupPrice: 47, current: 8, minimum: 10, theme: "football", sourceUrl: "https://www.psg.fr/matchs/football-masculin/20262027/paris-vs-le-mans-2026-10-10", imageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/psg-logo_avcznk", secondaryImageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/Lemans_qlupt6" },
-        { city: "Paris", title: "Stade Français Paris vs Montpellier HR", poster: "Stade Français · MHR", category: "Sport", date: "sam. 10 oct. · 14h30", dateEn: "Sat. 10 Oct. · 14:30", venue: "Stade Jean-Bouin · Paris 16e", publicPrice: 34, groupPrice: 29, current: 5, minimum: 7, theme: "sport", sourceUrl: "https://billetterie.stade.fr/fr/calendrier", imageUrl: "https://billetterie.stade.fr/media/stade-francais-paris.png", secondaryImageUrl: "https://billetterie.stade.fr/media/montpellier-herault-rugby.png" },
-        { city: "Paris", title: "Stereorganic présente Synapse", poster: "Synapse", category: "Clubs", date: "sam. 10 oct. · 23h", dateEn: "Sat. 10 Oct. · 23:00", venue: "Le Klub · Paris 1er", publicPrice: 24, groupPrice: 20, current: 6, minimum: 8, theme: "club", sourceUrl: "https://r.shotgun.live/fr/events/stereorganic-presente-synapse-acid-techno-psytrance", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Car_16%3A9%2Cw_3840/fl_lossy/f_auto/q_auto/c_limit%2Cf_auto%2Cfl_lossy%2Cq_auto%2Cw_1920/v1789171349/dev/artworks/Gemini_Generated_Image_6jfsrd6jfsrd6jfs_xkt51c" },
-        { city: "Paris", title: "ARCH Club", poster: "ARCH Club", category: "Clubs", date: "sam. 10 oct. · 18h30", dateEn: "Sat. 10 Oct. · 18:30", venue: "Élysée Montmartre · Paris 18e", publicPrice: 30, groupPrice: 26, current: 5, minimum: 7, theme: "club", sourceUrl: "https://www.elyseemontmartre.com/en/event/arch-club/", imageUrl: "https://www.elyseemontmartre.com/wp-content/uploads/sites/2/arch-club-limak-duno-xo-mau-v-elysee-montmartre.jpg" },
-        { city: "Paris", title: "Paris Basketball vs SIG Strasbourg", poster: "Paris · SIG", category: "Sport", date: "dim. 11 oct. · 16h30", dateEn: "Sun. 11 Oct. · 16:30", venue: "adidas arena · Paris 18e", publicPrice: 30, groupPrice: 26, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://adidasarena.directus.app/assets/48a9d08b-a386-48ff-b08d-3090ed1c04a2?format=webp&quality=90&width=320" },
-        { city: "Paris", title: "MaMA Festival & Convention 2026", poster: "MaMA Festival", category: "Festivals", date: "mer. 14–ven. 16 oct.", dateEn: "Wed. 14–Fri. 16 Oct.", venue: "Pigalle & Montmartre · Paris", publicPrice: 48, groupPrice: 41, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://wbm.be/fr/actualites/mama-festival-convention-2026", imageUrl: "https://wbm.be/sites/default/files/styles/facebook/public/2026-03/mama.png?itok=fKcETSP-" },
-        { city: "Paris", title: "Paris Basketball vs Virtus Bologna", poster: "Paris · Virtus", category: "Sport", date: "mer. 14 oct. · 20h45", dateEn: "Wed. 14 Oct. · 20:45", venue: "adidas arena · Paris 18e", publicPrice: 38, groupPrice: 33, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://adidasarena.directus.app/assets/76430f5a-5bc8-43a9-a22a-2e3023ba2799?format=webp&quality=90&width=320" },
-        { city: "Paris", title: "Jay Park avec LNGSHOT", poster: "Jay Park", category: "Concerts", date: "mar. 20 oct. · 20h", dateEn: "Tue. 20 Oct. · 20:00", venue: "Zénith Paris – La Villette", publicPrice: 49, groupPrice: 42, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://le-zenith.com/shows/Jay%20Park%20Ft.%20LNGSHOT-22250", imageUrl: "https://le-zenith.com/media/cache/show_cover/media/uploads/show-cover/6a3c0da642c7c686439515.jpg" },
-        { city: "Paris", title: "Paris Saint-Germain vs FC Barcelone", poster: "PSG · Barça", category: "Sport", date: "mar. 20 oct. · 21h", dateEn: "Tue. 20 Oct. · 21:00", venue: "Parc des Princes · Paris 16e", publicPrice: 75, groupPrice: 64, current: 9, minimum: 10, theme: "football", sourceUrl: "https://www.psg.fr/content/le-calendrier-europeen-des-parisiens-est-connu-psg-paris-saint-germain-ucl-champions-league-programmation-2026-2027", imageUrl: "https://media.psg.fr/image/upload/w_3840%2Cc_fill%2Cg_auto%2Car_16%3A9/f_avif%2Cq_75/_A9_3853_xrnfs2" },
-        { city: "Paris", title: "Wallace Cleaver — Marcel Tour", poster: "Wallace Cleaver", category: "Concerts", date: "jeu. 22 oct. · 20h", dateEn: "Thu. 22 Oct. · 20:00", venue: "Zénith Paris – La Villette", publicPrice: 42, groupPrice: 36, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://le-zenith.com/shows/Wallace%20Cleaver-21303", imageUrl: "https://le-zenith.com/media/cache/show_cover/media/uploads/show-banner/6a204c8242a19574634192.jpg" },
-        { city: "Paris", title: "Paris Games Week 2026", poster: "Paris Games Week", category: "Festivals", date: "jeu. 22–dim. 25 oct.", dateEn: "Thu. 22–Sun. 25 Oct.", venue: "Paris Expo Porte de Versailles", publicPrice: 35, groupPrice: 30, current: 10, minimum: 12, theme: "festival", sourceUrl: "https://www.parisgamesweek.com/fr", imageUrl: "https://cdn.sanity.io/images/33r5f5l4/development/8cd247d12825981aeb3b92f41958edf5ae126a09-3600x1881.jpg" },
-        { city: "Paris", title: "Paris Basketball vs Valencia Basket", poster: "Paris · Valencia", category: "Sport", date: "ven. 23 oct. · 20h45", dateEn: "Fri. 23 Oct. · 20:45", venue: "adidas arena · Paris 18e", publicPrice: 38, groupPrice: 33, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://adidasarena.directus.app/assets/08d1cc53-d6cb-424c-94c0-1bfbce74c7a4?format=webp&quality=90&width=320" },
-        { city: "Paris", title: "Art Basel Paris 2026", poster: "Art Basel", category: "Festivals", date: "ven. 23–dim. 25 oct.", dateEn: "Fri. 23–Sun. 25 Oct.", venue: "Grand Palais · Paris 8e", publicPrice: 42, groupPrice: 36, current: 6, minimum: 8, theme: "festival", sourceUrl: "https://www.grandpalais.fr/fr/programme/art-basel-paris-2026", imageUrl: "https://www.grandpalais.fr/sites/default/files/medias/images/2026-08/visuel_evenement_artbasel_grandpalais_2025.jpeg" },
-        { city: "Paris", title: "Hexagone MMA", poster: "Hexagone MMA", category: "Sport", date: "sam. 24 oct. · 19h", dateEn: "Sat. 24 Oct. · 19:00", venue: "Zénith Paris – La Villette", publicPrice: 46, groupPrice: 39, current: 7, minimum: 9, theme: "sport", sourceUrl: "https://le-zenith.com/shows/Hexagone%20MMA-21164", imageUrl: "https://le-zenith.com/media/cache/show_cover/media/uploads/show-banner/692d74e5ed893390823252.png" },
-        { city: "Paris", title: "Asake — In God We Trust World Tour", poster: "Asake", category: "Concerts", date: "sam. 24 oct. · 20h", dateEn: "Sat. 24 Oct. · 20:00", venue: "Accor Arena", publicPrice: 62, groupPrice: 53, current: 8, minimum: 10, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/asake-in-god-we-trust-world-tour--5d369", imageUrl: "https://media.licdn.com/dms/image/v2/D4E22AQE_B2wJeZHUpg/feedshare-shrink_1280/B4EZ5kgq_zJAAM-/0/1779802747235?e=2147483647&t=esq2_rM6EzDEi9iE-AmA9c8jVpp3UCmIH3Ibg_Af30o&v=beta" },
-        { city: "Paris", title: "Paris Saint-Germain vs Olympique Lyonnais", poster: "PSG · Lyon", category: "Sport", date: "dim. 25 oct. · 20h45", dateEn: "Sun. 25 Oct. · 20:45", venue: "Parc des Princes · Paris 16e", publicPrice: 65, groupPrice: 55, current: 8, minimum: 10, theme: "football", sourceUrl: "https://www.psg.fr/content/paris-lyon-le-2510-a-20h45-psg-ligue-1-programmation-calendrier-programme-8e-journee-2026-2027", imageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/psg-logo_avcznk", secondaryImageUrl: "https://api.psg.fr/umbraco/akqa/api/v1.0/sportsImage/Team/121le8unjfzug3iu9pgkqa1c7.png?width=3840" },
-        { city: "Paris", title: "Meryl", poster: "Meryl", category: "Concerts", date: "lun. 26–mar. 27 oct. · 20h", dateEn: "Mon. 26–Tue. 27 Oct. · 20:00", venue: "Accor Arena", publicPrice: 48, groupPrice: 41, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/meryl--98b3e", imageUrl: "https://files.offi.fr/programmation/3126495/images/1000/95e241adac4068f70ef3f6409dc7d98f.png" },
-        { city: "Paris", title: "Duran Duran", poster: "Duran Duran", category: "Concerts", date: "mer. 28 oct. · 20h", dateEn: "Wed. 28 Oct. · 20:00", venue: "Accor Arena", publicPrice: 69, groupPrice: 59, current: 7, minimum: 9, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation?view=calendar", imageUrl: "https://www.places-concert.com/images/visuels/events_duran_duran_accor_arena_paris_0601015525.webp" },
-        { city: "Paris", title: "Salon du Chocolat & de la Pâtisserie", poster: "Salon du Chocolat", category: "Festivals", date: "mer. 28 oct.–dim. 1 nov.", dateEn: "Wed. 28 Oct.–Sun. 1 Nov.", venue: "Paris Expo Porte de Versailles", publicPrice: 22, groupPrice: 19, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://www.salon-du-chocolat.com/fr-FR/paris", imageUrl: "https://www.salon-du-chocolat.com/-/media/Project/Comexposium-Master1/Master1-Chocolat/_banner-paris/patisserie-maxence-barbot.jpg?rev=0246f6467389450d96a25b6d7bcda12f&w=2000&hash=124755BF0AB3B3AD873DC77812D747F0" },
-        { city: "Paris", title: "Paris FC Féminines vs BK Häcken", poster: "Paris FC · Häcken", category: "Sport", date: "jeu. 29 oct. · 18h45", dateEn: "Thu. 29 Oct. · 18:45", venue: "Stade Charléty · Paris 13e", publicPrice: 26, groupPrice: 22, current: 5, minimum: 7, theme: "football", sourceUrl: "https://parisfc.fr/pro-feminin/ligue-des-champions-decouvrez-les-six-adversaires-du-paris-fc/", imageUrl: "https://parisfc.fr/wp-content/uploads/2026/09/Flo_Pernet-1-819x1024.jpg" },
-        { city: "Paris", title: "Dream Nation Festival 2026", poster: "Dream Nation", category: "Festivals", date: "ven. 30–sam. 31 oct.", dateEn: "Fri. 30–Sat. 31 Oct.", venue: "Paris Nord Villepinte", publicPrice: 65, groupPrice: 55, current: 9, minimum: 12, theme: "festival", sourceUrl: "https://www.nrj.fr/evenements-nrj/dream-nation-2026-71366549", imageUrl: "https://img.nrj.fr/tgu4MhwJ7lDcLzhYZ2WmpQ8C_54%3D/0x415/smart/medias%2F2026%2F05%2Fc4gqcuedwarxpmcsuu9tzbilrmhewvk8ztzs5zpetgq_6a0db30cde01a.jpg" },
-        { city: "Paris", title: "La Cage aux Folles", poster: "La Cage aux Folles", category: "Théâtre", date: "ven. 30 oct.–sam. 14 nov.", dateEn: "Fri. 30 Oct.–Sat. 14 Nov.", venue: "La Seine Musicale · Boulogne-Billancourt", publicPrice: 59, groupPrice: 50, current: 5, minimum: 7, theme: "theatre", sourceUrl: "https://www.ticketac.com/spectacles/la-cage-aux-folles", imageUrl: "https://d1k4bi32qf3nf2.cloudfront.net/thumb%402x/product/2026/01/la_cage_aux_folles_seine_musicale_affiche_2026_1769506522.jpg" },
-        { city: "Paris", title: "Rolex Paris Masters", poster: "Rolex Paris Masters", category: "Sport", date: "sam. 31 oct.–dim. 8 nov.", dateEn: "Sat. 31 Oct.–Sun. 8 Nov.", venue: "Paris La Défense Arena · Nanterre", publicPrice: 70, groupPrice: 60, current: 10, minimum: 12, theme: "sport", sourceUrl: "https://www.rolexparismasters.com/fr/actualites/article/billetterie-rolex-paris-masters-2026-tickets-places-40-ans-tournoi-anniversaire", imageUrl: "https://images.prismic.io/app-rpm/aju3gVbRV8_QfzvV_RolexParisMasters2025-Andr%C3%A9FerreiraFFT.jpg?auto=format%2Ccompress" },
-        { city: "Paris", title: "Simple Plan + Neck Deep", poster: "Simple Plan", category: "Concerts", date: "sam. 31 oct. · 20h", dateEn: "Sat. 31 Oct. · 20:00", venue: "Accor Arena", publicPrice: 55, groupPrice: 47, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/simple-plan--c11f2", imageUrl: "https://www.places-concert.com/images/visuels/events_simple_plan_accor_arena_paris_1117100833_large_100833.webp" },
-        { city: "Paris", title: "Paris FC vs AS Monaco", poster: "Paris FC · Monaco", category: "Sport", date: "sam. 31 oct. · 17h15", dateEn: "Sat. 31 Oct. · 17:15", venue: "Stade Jean-Bouin · Paris 16e", publicPrice: 45, groupPrice: 38, current: 7, minimum: 9, theme: "football", sourceUrl: "https://www.asmonaco.com/fr/news/decouvre-la-prog-du-deplacement-sur-la-pelouse-du-paris-fc-pour-la-j9", imageUrl: "https://parisfc.fr/wp-content/uploads/2026/09/CAR09202-683x1024.jpg" },
-        { city: "Paris", title: "Paris FC Féminines vs Paris Saint-Germain", poster: "Paris FC · PSG", category: "Sport", date: "sam. 31 oct. · 16h", dateEn: "Sat. 31 Oct. · 16:00", venue: "Stade Charléty · Paris 13e", publicPrice: 30, groupPrice: 26, current: 8, minimum: 10, theme: "football", sourceUrl: "https://parisfc.fr/match-center/women/119734/2026-10-31/paris-fc-vs-paris-saint-germain-arkema-premiere-ligue/", imageUrl: "https://parisfc.fr/wp-content/uploads/2026/09/Flo_Pernet-12-819x1024.jpg" },
-        { city: "Paris", title: "The World of Hans Zimmer — A New Dimension", poster: "Hans Zimmer", category: "Concerts", date: "lun. 2 nov. · 20h", dateEn: "Mon. 2 Nov. · 20:00", venue: "Accor Arena", publicPrice: 75, groupPrice: 64, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/the-world-of-hans-zimmer--e6f23", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w600%2Ch600%2Cfcrop%2Cq85/785bf426-c14d-45dc-8c1c-6df449ee2a9d.jpg" },
-        { city: "Paris", title: "NCAA Women’s Basketball", poster: "NCAA Women’s", category: "Sport", date: "lun. 2 nov. · 18h", dateEn: "Mon. 2 Nov. · 18:00", venue: "adidas arena · Paris 18e", publicPrice: 35, groupPrice: 30, current: 5, minimum: 7, theme: "sport", sourceUrl: "https://www.adidasarena.com/programmation", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/213f9e67-4b35-4520-ad02-106fb6378119.jpg" },
-        { city: "Paris", title: "J. Cole — The Fall-Off Tour", poster: "J. Cole", category: "Concerts", date: "jeu. 5 nov. · 20h", dateEn: "Thu. 5 Nov. · 20:00", venue: "Accor Arena", publicPrice: 75, groupPrice: 64, current: 8, minimum: 10, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/jcole-the-fall-off-tour--e6352", imageUrl: "https://www.places-concert.com/images/visuels/events_j._cole_accor_arena_paris_0217062415.webp" },
-        { city: "Paris", title: "Niall Horan — Dinner Party Live On Tour", poster: "Niall Horan", category: "Concerts", date: "ven. 6 nov. · 20h", dateEn: "Fri. 6 Nov. · 20:00", venue: "Accor Arena", publicPrice: 65, groupPrice: 55, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/niall-horan-dinner-party-live-on-tour--e92a5", imageUrl: "https://www.places-concert.com/images/visuels/events_niall_horan_accor_arena_paris_0325064710.webp" },
-        { city: "Paris", title: "Paris Saint-Germain vs ESTAC Troyes", poster: "PSG · Troyes", category: "Sport", date: "sam. 7 nov. · 19h45", dateEn: "Sat. 7 Nov. · 19:45", venue: "Parc des Princes · Paris 16e", publicPrice: 52, groupPrice: 44, current: 7, minimum: 9, theme: "football", sourceUrl: "https://www.psg.fr/football-masculin/calendrier/season/2026-27?competition=Ligue_1", imageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/psg-logo_avcznk", secondaryImageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/TROYES_qryivh" },
-        { city: "Paris", title: "Fianso", poster: "Fianso", category: "Concerts", date: "jeu. 12 nov. · 20h", dateEn: "Thu. 12 Nov. · 20:00", venue: "Accor Arena", publicPrice: 55, groupPrice: 47, current: 7, minimum: 9, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/fianso--e6392", imageUrl: "https://media.licdn.com/dms/image/v2/D4E22AQFOFaeHYkfXHA/feedshare-shrink_800/B4EZlMZ39UKkAg-/0/1757923476213?e=2147483647&t=6nMq3WKmOs_tE_orBYSHFtK-o5sqT9e1Y1qpKiZGKAw&v=beta" },
-        { city: "Paris", title: "Kery James", poster: "Kery James", category: "Concerts", date: "dim. 15 nov. · 20h", dateEn: "Sun. 15 Nov. · 20:00", venue: "Accor Arena", publicPrice: 59, groupPrice: 50, current: 7, minimum: 9, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/kery-james--7b17e", imageUrl: "https://culturap.fr/wp-content/uploads/2025/10/kery-james-bercy-2026-575x575.jpg" },
-        { city: "Paris", title: "Vanessa Paradis", poster: "Vanessa Paradis", category: "Concerts", date: "mar. 17 nov. · 20h", dateEn: "Tue. 17 Nov. · 20:00", venue: "Accor Arena", publicPrice: 69, groupPrice: 59, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/vanessa-paradis--7b30c", imageUrl: "https://www.concert-auguri.fr/sites/hubber_site_auguri8/files/styles/vignette_card_image/public/2025-09/vanessaparadis-aha-fnac-1080x1080-2509292-1.jpg?itok=-PGEI2aI" },
-        { city: "Paris", title: "No Limit", poster: "No Limit", category: "Concerts", date: "mer. 18 nov. · 20h", dateEn: "Wed. 18 Nov. · 20:00", venue: "Accor Arena", publicPrice: 65, groupPrice: 55, current: 9, minimum: 11, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/no-limit--1b237", imageUrl: "https://pbs.twimg.com/media/HF4Gn6ZXkAEDco5.jpg" },
-        { city: "Paris", title: "Paris FC Féminines vs HB Køge", poster: "Paris FC · Køge", category: "Sport", date: "jeu. 19 nov. · 18h45", dateEn: "Thu. 19 Nov. · 18:45", venue: "Stade Charléty · Paris 13e", publicPrice: 26, groupPrice: 22, current: 5, minimum: 7, theme: "football", sourceUrl: "https://parisfc.fr/pro-feminin/ligue-des-champions-decouvrez-les-six-adversaires-du-paris-fc/", imageUrl: "https://parisfc.fr/wp-content/uploads/2026/09/Flo_Pernet-36-819x1024.jpg" },
-        { city: "Paris", title: "ARES 45", poster: "ARES 45", category: "Sport", date: "ven. 20 nov. · 19h30", dateEn: "Fri. 20 Nov. · 19:30", venue: "adidas arena · Paris 18e", publicPrice: 42, groupPrice: 36, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.adidasarena.com/programmation", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/a87a8e72-db25-40fc-bb64-341c35a1df3a.jpeg" },
-        { city: "Paris", title: "No Leash, No Limit — Winter Edition", poster: "No Leash", category: "Clubs", date: "sam. 21 nov. · 23h", dateEn: "Sat. 21 Nov. · 23:00", venue: "Le Klub · Paris 1er", publicPrice: 24, groupPrice: 20, current: 7, minimum: 9, theme: "club", sourceUrl: "https://r.shotgun.live/fr/events/no-leash-no-limit-winter-edition", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Car_16%3A9%2Cw_3840/fl_lossy/f_auto/q_auto/production/artworks/NLNL_Winter_Shotgun_2_ryufvi.png" },
-        { city: "Paris", title: "Paris Saint-Germain vs AS Roma", poster: "PSG · Roma", category: "Sport", date: "mer. 25 nov. · 21h", dateEn: "Wed. 25 Nov. · 21:00", venue: "Parc des Princes · Paris 16e", publicPrice: 72, groupPrice: 61, current: 8, minimum: 10, theme: "football", sourceUrl: "https://www.psg.fr/content/le-calendrier-europeen-des-parisiens-est-connu-psg-paris-saint-germain-ucl-champions-league-programmation-2026-2027", imageUrl: "https://media.psg.fr/image/upload/w_3840%2Cc_fill%2Cg_auto%2Car_16%3A9/f_avif%2Cq_75/_A9_3853_xrnfs2" },
-        { city: "Paris", title: "Paris Saint-Germain vs FC Lorient", poster: "PSG · Lorient", category: "Sport", date: "sam. 28 nov. · 19h45", dateEn: "Sat. 28 Nov. · 19:45", venue: "Parc des Princes · Paris 16e", publicPrice: 52, groupPrice: 44, current: 7, minimum: 9, theme: "football", sourceUrl: "https://www.psg.fr/football-masculin/calendrier/season/2026-27?competition=Ligue_1", imageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/psg-logo_avcznk", secondaryImageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/FC_Lorient_wsx1in" },
-        { city: "Paris", title: "World Championships Breaking & Hip-Hop Freestyle", poster: "Breaking Worlds", category: "Sport", date: "sam. 5–dim. 6 déc.", dateEn: "Sat. 5–Sun. 6 Dec.", venue: "adidas arena · Paris 18e", publicPrice: 38, groupPrice: 33, current: 8, minimum: 10, theme: "sport", sourceUrl: "https://www.adidasarena.com/programmation", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/13256755-a8fe-4df8-ba9d-ea74ebbe71c8.jpg" }
+        { city: "Paris", title: "Festival d’Automne 2026", poster: "Festival d’Automne", category: "Festivals", date: "mar. 22 sept.–jeu. 31 déc.", dateEn: "Tue. 22 Sep.–Thu. 31 Dec.", venue: "Plusieurs lieux · Paris", publicPrice: 28, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://www.paris.fr/evenements/festival-d-automne-2026-tout-le-programme-123786", imageUrl: "https://cdn.paris.fr/qfapv4/2026/04/28/huge-256d3b54e1e96a14afa8f7b1917f2f9e.jpg" },
+        { city: "Paris", title: "ARES 43", poster: "ARES 43", category: "Sport", date: "ven. 25 sept. · 19h30", dateEn: "Fri. 25 Sep. · 19:30", venue: "adidas arena · Paris 18e", publicPrice: 42, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.adidasarena.com/programmation", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/e24d9ef2-93f5-4bf5-8b17-1e231a68df10.jpeg" },
+        { city: "Paris", title: "L’Arc Paris — Saturday Night", poster: "L’Arc Paris", category: "Clubs", date: "sam. 26 sept. · 23h", dateEn: "Sat. 26 Sep. · 23:00", venue: "L’Arc · Paris 16e", publicPrice: 25, current: 7, minimum: 9, theme: "club", sourceUrl: "https://www.clubbable.com/fr-FR/Paris/L%27Arc/26-sept.-2026", imageUrl: "https://media.alotea.com/l-arc-paris-1.webp" },
+        { city: "Paris", title: "Stade Français Paris vs LOU Rugby", poster: "Stade Français · LOU", category: "Sport", date: "sam. 26 sept. · 16h35", dateEn: "Sat. 26 Sep. · 16:35", venue: "Stade Jean-Bouin · Paris 16e", publicPrice: 34, current: 5, minimum: 7, theme: "sport", sourceUrl: "https://billetterie.stade.fr/fr/calendrier", imageUrl: "https://billetterie.stade.fr/media/stade-francais-paris.png", secondaryImageUrl: "https://billetterie.stade.fr/media/lou-rugby.png" },
+        { city: "Paris", title: "Paris Basketball vs Partizan Belgrade", poster: "Paris · Partizan", category: "Sport", date: "mar. 29 sept. · 20h45", dateEn: "Tue. 29 Sep. · 20:45", venue: "adidas arena · Paris 18e", publicPrice: 38, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/d5b23424-f26b-4f7f-8324-34c58fd37a76.jpg" },
+        { city: "Paris", title: "Paris FC Féminines vs Arsenal", poster: "Paris FC · Arsenal", category: "Sport", date: "mer. 30 sept. · 18h45", dateEn: "Wed. 30 Sep. · 18:45", venue: "Stade Jean-Bouin · Paris 16e", publicPrice: 26, current: 5, minimum: 7, theme: "football", sourceUrl: "https://parisfc.fr/pro-feminin/ligue-des-champions-decouvrez-les-six-adversaires-du-paris-fc/", imageUrl: "https://parisfc.fr/wp-content/uploads/2026/09/Plan-de-travail-2.png" },
+        { city: "Paris", title: "Synthony", poster: "Synthony", category: "Clubs", date: "jeu. 1 oct. · 20h", dateEn: "Thu. 1 Oct. · 20:00", venue: "Zénith Paris – La Villette", publicPrice: 52, current: 7, minimum: 8, theme: "club", sourceUrl: "https://le-zenith.com/shows/Synthony-21824", imageUrl: "https://le-zenith.com/media/cache/show_poster/media/uploads/show-poster/68d55eefbbee9604519266.png" },
+        { city: "Paris", title: "Paris Basketball vs Žalgiris Kaunas", poster: "Paris · Žalgiris", category: "Sport", date: "jeu. 1 oct. · 20h45", dateEn: "Thu. 1 Oct. · 20:45", venue: "adidas arena · Paris 18e", publicPrice: 38, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/1330bd23-9080-45de-b2dd-87d3ffa09a9b.jpg" },
+        { city: "Paris", title: "Bérengère Krief — Sexe", poster: "Bérengère Krief", category: "Humour", date: "jeu. 1–sam. 3 oct.", dateEn: "Thu. 1–Sat. 3 Oct.", venue: "L’Olympia · Paris 9e", publicPrice: 45, current: 4, minimum: 6, theme: "humour", sourceUrl: "https://berengerekrief.fr/", imageUrl: "https://berengerekrief.fr/cdn/shop/files/Section_hero_image.jpg?v=1743174311&width=2500" },
+        { city: "Paris", title: "Neg’ Marrons — 30 ans de carrière", poster: "Neg’ Marrons", category: "Concerts", date: "ven. 2 oct. · 20h", dateEn: "Fri. 2 Oct. · 20:00", venue: "Zénith Paris – La Villette", publicPrice: 42, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://le-zenith.com/shows/Neg%27%20Marrons-21711", imageUrl: "https://le-zenith.com/media/cache/show_poster/media/uploads/show-poster/692f016291146922005717.png" },
+        { city: "Paris", title: "Deviance Paris Pride — Party + After", poster: "Deviance", category: "Clubs", date: "sam. 3 oct. · 23h", dateEn: "Sat. 3 Oct. · 23:00", venue: "WorkshoW · Paris", publicPrice: 27, current: 8, minimum: 10, theme: "club", sourceUrl: "https://shotgun.live/en/events/deviance-pride-2", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Cw_384/fl_lossy/f_auto/q_5/dev/artworks/COVER_SHOTGUN_ulimey.png" },
+        { city: "Paris", title: "Shrek, le musical", poster: "Shrek", category: "Théâtre", date: "sam. 3 oct.–dim. 17 janv.", dateEn: "Sat. 3 Oct.–Sun. 17 Jan.", venue: "Folies Bergère · Paris 9e", publicPrice: 55, current: 5, minimum: 7, theme: "theatre", sourceUrl: "https://www.offi.fr/enfants/les-folies-bergere-2331/shrek-le-musical-104778.html", imageUrl: "https://files.offi.fr/programmation/3164539/images/1000/c322aecb986348b6c1c31ade8dfadd6f.jpg" },
+        { city: "Paris", title: "AEW Grand Slam Paris", poster: "AEW Grand Slam", category: "Sport", date: "mar. 6 oct. · 18h", dateEn: "Tue. 6 Oct. · 18:00", venue: "adidas arena · Paris 18e", publicPrice: 45, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.adidasarena.com/programmation", imageUrl: "https://adidasarena.directus.app/assets/2c7becfa-56d4-42c7-a7fb-c7d4e9f66f2c?format=webp&quality=90&width=320" },
+        { city: "Paris", title: "Paris Basketball vs LDLC ASVEL", poster: "Paris · ASVEL", category: "Sport", date: "mer. 7 oct. · 20h45", dateEn: "Wed. 7 Oct. · 20:45", venue: "adidas arena · Paris 18e", publicPrice: 38, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://adidasarena.directus.app/assets/43a17bf5-a4ab-44ab-b555-2d6bf2365a0e?format=webp&quality=90&width=320" },
+        { city: "Paris", title: "Apparat", poster: "Apparat", category: "Clubs", date: "ven. 9 oct. · 20h", dateEn: "Fri. 9 Oct. · 20:00", venue: "Élysée Montmartre · Paris 18e", publicPrice: 40, current: 5, minimum: 7, theme: "club", sourceUrl: "https://www.places-concert.com/concert-303269/billets-apparat-elysee-montmartre-paris", imageUrl: "https://www.places-concert.com/images/visuels/events_apparat_elysee_montmartre_paris_0202021217.webp" },
+        { city: "Paris", title: "Paris Saint-Germain vs Le Mans FC", poster: "PSG · Le Mans", category: "Sport", date: "sam. 10 oct. · 20h45", dateEn: "Sat. 10 Oct. · 20:45", venue: "Parc des Princes · Paris 16e", publicPrice: 55, current: 8, minimum: 10, theme: "football", sourceUrl: "https://www.psg.fr/matchs/football-masculin/20262027/paris-vs-le-mans-2026-10-10", imageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/psg-logo_avcznk", secondaryImageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/Lemans_qlupt6" },
+        { city: "Paris", title: "Stade Français Paris vs Montpellier HR", poster: "Stade Français · MHR", category: "Sport", date: "sam. 10 oct. · 14h30", dateEn: "Sat. 10 Oct. · 14:30", venue: "Stade Jean-Bouin · Paris 16e", publicPrice: 34, current: 5, minimum: 7, theme: "sport", sourceUrl: "https://billetterie.stade.fr/fr/calendrier", imageUrl: "https://billetterie.stade.fr/media/stade-francais-paris.png", secondaryImageUrl: "https://billetterie.stade.fr/media/montpellier-herault-rugby.png" },
+        { city: "Paris", title: "Stereorganic présente Synapse", poster: "Synapse", category: "Clubs", date: "sam. 10 oct. · 23h", dateEn: "Sat. 10 Oct. · 23:00", venue: "Le Klub · Paris 1er", publicPrice: 24, current: 6, minimum: 8, theme: "club", sourceUrl: "https://r.shotgun.live/fr/events/stereorganic-presente-synapse-acid-techno-psytrance", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Car_16%3A9%2Cw_3840/fl_lossy/f_auto/q_auto/c_limit%2Cf_auto%2Cfl_lossy%2Cq_auto%2Cw_1920/v1789171349/dev/artworks/Gemini_Generated_Image_6jfsrd6jfsrd6jfs_xkt51c" },
+        { city: "Paris", title: "ARCH Club", poster: "ARCH Club", category: "Clubs", date: "sam. 10 oct. · 18h30", dateEn: "Sat. 10 Oct. · 18:30", venue: "Élysée Montmartre · Paris 18e", publicPrice: 30, current: 5, minimum: 7, theme: "club", sourceUrl: "https://www.elyseemontmartre.com/en/event/arch-club/", imageUrl: "https://www.elyseemontmartre.com/wp-content/uploads/sites/2/arch-club-limak-duno-xo-mau-v-elysee-montmartre.jpg" },
+        { city: "Paris", title: "Paris Basketball vs SIG Strasbourg", poster: "Paris · SIG", category: "Sport", date: "dim. 11 oct. · 16h30", dateEn: "Sun. 11 Oct. · 16:30", venue: "adidas arena · Paris 18e", publicPrice: 30, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://adidasarena.directus.app/assets/48a9d08b-a386-48ff-b08d-3090ed1c04a2?format=webp&quality=90&width=320" },
+        { city: "Paris", title: "MaMA Festival & Convention 2026", poster: "MaMA Festival", category: "Festivals", date: "mer. 14–ven. 16 oct.", dateEn: "Wed. 14–Fri. 16 Oct.", venue: "Pigalle & Montmartre · Paris", publicPrice: 48, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://wbm.be/fr/actualites/mama-festival-convention-2026", imageUrl: "https://wbm.be/sites/default/files/styles/facebook/public/2026-03/mama.png?itok=fKcETSP-" },
+        { city: "Paris", title: "Paris Basketball vs Virtus Bologna", poster: "Paris · Virtus", category: "Sport", date: "mer. 14 oct. · 20h45", dateEn: "Wed. 14 Oct. · 20:45", venue: "adidas arena · Paris 18e", publicPrice: 38, current: 7, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://adidasarena.directus.app/assets/76430f5a-5bc8-43a9-a22a-2e3023ba2799?format=webp&quality=90&width=320" },
+        { city: "Paris", title: "Jay Park avec LNGSHOT", poster: "Jay Park", category: "Concerts", date: "mar. 20 oct. · 20h", dateEn: "Tue. 20 Oct. · 20:00", venue: "Zénith Paris – La Villette", publicPrice: 49, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://le-zenith.com/shows/Jay%20Park%20Ft.%20LNGSHOT-22250", imageUrl: "https://le-zenith.com/media/cache/show_cover/media/uploads/show-cover/6a3c0da642c7c686439515.jpg" },
+        { city: "Paris", title: "Paris Saint-Germain vs FC Barcelone", poster: "PSG · Barça", category: "Sport", date: "mar. 20 oct. · 21h", dateEn: "Tue. 20 Oct. · 21:00", venue: "Parc des Princes · Paris 16e", publicPrice: 75, current: 9, minimum: 10, theme: "football", sourceUrl: "https://www.psg.fr/content/le-calendrier-europeen-des-parisiens-est-connu-psg-paris-saint-germain-ucl-champions-league-programmation-2026-2027", imageUrl: "https://media.psg.fr/image/upload/w_3840%2Cc_fill%2Cg_auto%2Car_16%3A9/f_avif%2Cq_75/_A9_3853_xrnfs2" },
+        { city: "Paris", title: "Wallace Cleaver — Marcel Tour", poster: "Wallace Cleaver", category: "Concerts", date: "jeu. 22 oct. · 20h", dateEn: "Thu. 22 Oct. · 20:00", venue: "Zénith Paris – La Villette", publicPrice: 42, current: 5, minimum: 7, theme: "concert", sourceUrl: "https://le-zenith.com/shows/Wallace%20Cleaver-21303", imageUrl: "https://le-zenith.com/media/cache/show_cover/media/uploads/show-banner/6a204c8242a19574634192.jpg" },
+        { city: "Paris", title: "Paris Games Week 2026", poster: "Paris Games Week", category: "Festivals", date: "jeu. 22–dim. 25 oct.", dateEn: "Thu. 22–Sun. 25 Oct.", venue: "Paris Expo Porte de Versailles", publicPrice: 35, current: 10, minimum: 12, theme: "festival", sourceUrl: "https://www.parisgamesweek.com/fr", imageUrl: "https://cdn.sanity.io/images/33r5f5l4/development/8cd247d12825981aeb3b92f41958edf5ae126a09-3600x1881.jpg" },
+        { city: "Paris", title: "Paris Basketball vs Valencia Basket", poster: "Paris · Valencia", category: "Sport", date: "ven. 23 oct. · 20h45", dateEn: "Fri. 23 Oct. · 20:45", venue: "adidas arena · Paris 18e", publicPrice: 38, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://billetterie.parisbasketball.com/fr/calendrier?view=all", imageUrl: "https://adidasarena.directus.app/assets/08d1cc53-d6cb-424c-94c0-1bfbce74c7a4?format=webp&quality=90&width=320" },
+        { city: "Paris", title: "Art Basel Paris 2026", poster: "Art Basel", category: "Festivals", date: "ven. 23–dim. 25 oct.", dateEn: "Fri. 23–Sun. 25 Oct.", venue: "Grand Palais · Paris 8e", publicPrice: 42, current: 6, minimum: 8, theme: "festival", sourceUrl: "https://www.grandpalais.fr/fr/programme/art-basel-paris-2026", imageUrl: "https://www.grandpalais.fr/sites/default/files/medias/images/2026-08/visuel_evenement_artbasel_grandpalais_2025.jpeg" },
+        { city: "Paris", title: "Hexagone MMA", poster: "Hexagone MMA", category: "Sport", date: "sam. 24 oct. · 19h", dateEn: "Sat. 24 Oct. · 19:00", venue: "Zénith Paris – La Villette", publicPrice: 46, current: 7, minimum: 9, theme: "sport", sourceUrl: "https://le-zenith.com/shows/Hexagone%20MMA-21164", imageUrl: "https://le-zenith.com/media/cache/show_cover/media/uploads/show-banner/692d74e5ed893390823252.png" },
+        { city: "Paris", title: "Asake — In God We Trust World Tour", poster: "Asake", category: "Concerts", date: "sam. 24 oct. · 20h", dateEn: "Sat. 24 Oct. · 20:00", venue: "Accor Arena", publicPrice: 62, current: 8, minimum: 10, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/asake-in-god-we-trust-world-tour--5d369", imageUrl: "https://media.licdn.com/dms/image/v2/D4E22AQE_B2wJeZHUpg/feedshare-shrink_1280/B4EZ5kgq_zJAAM-/0/1779802747235?e=2147483647&t=esq2_rM6EzDEi9iE-AmA9c8jVpp3UCmIH3Ibg_Af30o&v=beta" },
+        { city: "Paris", title: "Paris Saint-Germain vs Olympique Lyonnais", poster: "PSG · Lyon", category: "Sport", date: "dim. 25 oct. · 20h45", dateEn: "Sun. 25 Oct. · 20:45", venue: "Parc des Princes · Paris 16e", publicPrice: 65, current: 8, minimum: 10, theme: "football", sourceUrl: "https://www.psg.fr/content/paris-lyon-le-2510-a-20h45-psg-ligue-1-programmation-calendrier-programme-8e-journee-2026-2027", imageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/psg-logo_avcznk", secondaryImageUrl: "https://api.psg.fr/umbraco/akqa/api/v1.0/sportsImage/Team/121le8unjfzug3iu9pgkqa1c7.png?width=3840" },
+        { city: "Paris", title: "Meryl", poster: "Meryl", category: "Concerts", date: "lun. 26–mar. 27 oct. · 20h", dateEn: "Mon. 26–Tue. 27 Oct. · 20:00", venue: "Accor Arena", publicPrice: 48, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/meryl--98b3e", imageUrl: "https://files.offi.fr/programmation/3126495/images/1000/95e241adac4068f70ef3f6409dc7d98f.png" },
+        { city: "Paris", title: "Duran Duran", poster: "Duran Duran", category: "Concerts", date: "mer. 28 oct. · 20h", dateEn: "Wed. 28 Oct. · 20:00", venue: "Accor Arena", publicPrice: 69, current: 7, minimum: 9, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation?view=calendar", imageUrl: "https://www.places-concert.com/images/visuels/events_duran_duran_accor_arena_paris_0601015525.webp" },
+        { city: "Paris", title: "Salon du Chocolat & de la Pâtisserie", poster: "Salon du Chocolat", category: "Festivals", date: "mer. 28 oct.–dim. 1 nov.", dateEn: "Wed. 28 Oct.–Sun. 1 Nov.", venue: "Paris Expo Porte de Versailles", publicPrice: 22, current: 8, minimum: 10, theme: "festival", sourceUrl: "https://www.salon-du-chocolat.com/fr-FR/paris", imageUrl: "https://www.salon-du-chocolat.com/-/media/Project/Comexposium-Master1/Master1-Chocolat/_banner-paris/patisserie-maxence-barbot.jpg?rev=0246f6467389450d96a25b6d7bcda12f&w=2000&hash=124755BF0AB3B3AD873DC77812D747F0" },
+        { city: "Paris", title: "Paris FC Féminines vs BK Häcken", poster: "Paris FC · Häcken", category: "Sport", date: "jeu. 29 oct. · 18h45", dateEn: "Thu. 29 Oct. · 18:45", venue: "Stade Charléty · Paris 13e", publicPrice: 26, current: 5, minimum: 7, theme: "football", sourceUrl: "https://parisfc.fr/pro-feminin/ligue-des-champions-decouvrez-les-six-adversaires-du-paris-fc/", imageUrl: "https://parisfc.fr/wp-content/uploads/2026/09/Flo_Pernet-1-819x1024.jpg" },
+        { city: "Paris", title: "Dream Nation Festival 2026", poster: "Dream Nation", category: "Festivals", date: "ven. 30–sam. 31 oct.", dateEn: "Fri. 30–Sat. 31 Oct.", venue: "Paris Nord Villepinte", publicPrice: 65, current: 9, minimum: 12, theme: "festival", sourceUrl: "https://www.nrj.fr/evenements-nrj/dream-nation-2026-71366549", imageUrl: "https://img.nrj.fr/tgu4MhwJ7lDcLzhYZ2WmpQ8C_54%3D/0x415/smart/medias%2F2026%2F05%2Fc4gqcuedwarxpmcsuu9tzbilrmhewvk8ztzs5zpetgq_6a0db30cde01a.jpg" },
+        { city: "Paris", title: "La Cage aux Folles", poster: "La Cage aux Folles", category: "Théâtre", date: "ven. 30 oct.–sam. 14 nov.", dateEn: "Fri. 30 Oct.–Sat. 14 Nov.", venue: "La Seine Musicale · Boulogne-Billancourt", publicPrice: 59, current: 5, minimum: 7, theme: "theatre", sourceUrl: "https://www.ticketac.com/spectacles/la-cage-aux-folles", imageUrl: "https://d1k4bi32qf3nf2.cloudfront.net/thumb%402x/product/2026/01/la_cage_aux_folles_seine_musicale_affiche_2026_1769506522.jpg" },
+        { city: "Paris", title: "Rolex Paris Masters", poster: "Rolex Paris Masters", category: "Sport", date: "sam. 31 oct.–dim. 8 nov.", dateEn: "Sat. 31 Oct.–Sun. 8 Nov.", venue: "Paris La Défense Arena · Nanterre", publicPrice: 70, current: 10, minimum: 12, theme: "sport", sourceUrl: "https://www.rolexparismasters.com/fr/actualites/article/billetterie-rolex-paris-masters-2026-tickets-places-40-ans-tournoi-anniversaire", imageUrl: "https://images.prismic.io/app-rpm/aju3gVbRV8_QfzvV_RolexParisMasters2025-Andr%C3%A9FerreiraFFT.jpg?auto=format%2Ccompress" },
+        { city: "Paris", title: "Simple Plan + Neck Deep", poster: "Simple Plan", category: "Concerts", date: "sam. 31 oct. · 20h", dateEn: "Sat. 31 Oct. · 20:00", venue: "Accor Arena", publicPrice: 55, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/simple-plan--c11f2", imageUrl: "https://www.places-concert.com/images/visuels/events_simple_plan_accor_arena_paris_1117100833_large_100833.webp" },
+        { city: "Paris", title: "Paris FC vs AS Monaco", poster: "Paris FC · Monaco", category: "Sport", date: "sam. 31 oct. · 17h15", dateEn: "Sat. 31 Oct. · 17:15", venue: "Stade Jean-Bouin · Paris 16e", publicPrice: 45, current: 7, minimum: 9, theme: "football", sourceUrl: "https://www.asmonaco.com/fr/news/decouvre-la-prog-du-deplacement-sur-la-pelouse-du-paris-fc-pour-la-j9", imageUrl: "https://parisfc.fr/wp-content/uploads/2026/09/CAR09202-683x1024.jpg" },
+        { city: "Paris", title: "Paris FC Féminines vs Paris Saint-Germain", poster: "Paris FC · PSG", category: "Sport", date: "sam. 31 oct. · 16h", dateEn: "Sat. 31 Oct. · 16:00", venue: "Stade Charléty · Paris 13e", publicPrice: 30, current: 8, minimum: 10, theme: "football", sourceUrl: "https://parisfc.fr/match-center/women/119734/2026-10-31/paris-fc-vs-paris-saint-germain-arkema-premiere-ligue/", imageUrl: "https://parisfc.fr/wp-content/uploads/2026/09/Flo_Pernet-12-819x1024.jpg" },
+        { city: "Paris", title: "The World of Hans Zimmer — A New Dimension", poster: "Hans Zimmer", category: "Concerts", date: "lun. 2 nov. · 20h", dateEn: "Mon. 2 Nov. · 20:00", venue: "Accor Arena", publicPrice: 75, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/the-world-of-hans-zimmer--e6f23", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w600%2Ch600%2Cfcrop%2Cq85/785bf426-c14d-45dc-8c1c-6df449ee2a9d.jpg" },
+        { city: "Paris", title: "NCAA Women’s Basketball", poster: "NCAA Women’s", category: "Sport", date: "lun. 2 nov. · 18h", dateEn: "Mon. 2 Nov. · 18:00", venue: "adidas arena · Paris 18e", publicPrice: 35, current: 5, minimum: 7, theme: "sport", sourceUrl: "https://www.adidasarena.com/programmation", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/213f9e67-4b35-4520-ad02-106fb6378119.jpg" },
+        { city: "Paris", title: "J. Cole — The Fall-Off Tour", poster: "J. Cole", category: "Concerts", date: "jeu. 5 nov. · 20h", dateEn: "Thu. 5 Nov. · 20:00", venue: "Accor Arena", publicPrice: 75, current: 8, minimum: 10, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/jcole-the-fall-off-tour--e6352", imageUrl: "https://www.places-concert.com/images/visuels/events_j._cole_accor_arena_paris_0217062415.webp" },
+        { city: "Paris", title: "Niall Horan — Dinner Party Live On Tour", poster: "Niall Horan", category: "Concerts", date: "ven. 6 nov. · 20h", dateEn: "Fri. 6 Nov. · 20:00", venue: "Accor Arena", publicPrice: 65, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/niall-horan-dinner-party-live-on-tour--e92a5", imageUrl: "https://www.places-concert.com/images/visuels/events_niall_horan_accor_arena_paris_0325064710.webp" },
+        { city: "Paris", title: "Paris Saint-Germain vs ESTAC Troyes", poster: "PSG · Troyes", category: "Sport", date: "sam. 7 nov. · 19h45", dateEn: "Sat. 7 Nov. · 19:45", venue: "Parc des Princes · Paris 16e", publicPrice: 52, current: 7, minimum: 9, theme: "football", sourceUrl: "https://www.psg.fr/football-masculin/calendrier/season/2026-27?competition=Ligue_1", imageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/psg-logo_avcznk", secondaryImageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/TROYES_qryivh" },
+        { city: "Paris", title: "Fianso", poster: "Fianso", category: "Concerts", date: "jeu. 12 nov. · 20h", dateEn: "Thu. 12 Nov. · 20:00", venue: "Accor Arena", publicPrice: 55, current: 7, minimum: 9, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/fianso--e6392", imageUrl: "https://media.licdn.com/dms/image/v2/D4E22AQFOFaeHYkfXHA/feedshare-shrink_800/B4EZlMZ39UKkAg-/0/1757923476213?e=2147483647&t=6nMq3WKmOs_tE_orBYSHFtK-o5sqT9e1Y1qpKiZGKAw&v=beta" },
+        { city: "Paris", title: "Kery James", poster: "Kery James", category: "Concerts", date: "dim. 15 nov. · 20h", dateEn: "Sun. 15 Nov. · 20:00", venue: "Accor Arena", publicPrice: 59, current: 7, minimum: 9, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/kery-james--7b17e", imageUrl: "https://culturap.fr/wp-content/uploads/2025/10/kery-james-bercy-2026-575x575.jpg" },
+        { city: "Paris", title: "Vanessa Paradis", poster: "Vanessa Paradis", category: "Concerts", date: "mar. 17 nov. · 20h", dateEn: "Tue. 17 Nov. · 20:00", venue: "Accor Arena", publicPrice: 69, current: 6, minimum: 8, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/vanessa-paradis--7b30c", imageUrl: "https://www.concert-auguri.fr/sites/hubber_site_auguri8/files/styles/vignette_card_image/public/2025-09/vanessaparadis-aha-fnac-1080x1080-2509292-1.jpg?itok=-PGEI2aI" },
+        { city: "Paris", title: "No Limit", poster: "No Limit", category: "Concerts", date: "mer. 18 nov. · 20h", dateEn: "Wed. 18 Nov. · 20:00", venue: "Accor Arena", publicPrice: 65, current: 9, minimum: 11, theme: "concert", sourceUrl: "https://www.accorarena.com/fr/programmation/no-limit--1b237", imageUrl: "https://pbs.twimg.com/media/HF4Gn6ZXkAEDco5.jpg" },
+        { city: "Paris", title: "Paris FC Féminines vs HB Køge", poster: "Paris FC · Køge", category: "Sport", date: "jeu. 19 nov. · 18h45", dateEn: "Thu. 19 Nov. · 18:45", venue: "Stade Charléty · Paris 13e", publicPrice: 26, current: 5, minimum: 7, theme: "football", sourceUrl: "https://parisfc.fr/pro-feminin/ligue-des-champions-decouvrez-les-six-adversaires-du-paris-fc/", imageUrl: "https://parisfc.fr/wp-content/uploads/2026/09/Flo_Pernet-36-819x1024.jpg" },
+        { city: "Paris", title: "ARES 45", poster: "ARES 45", category: "Sport", date: "ven. 20 nov. · 19h30", dateEn: "Fri. 20 Nov. · 19:30", venue: "adidas arena · Paris 18e", publicPrice: 42, current: 6, minimum: 8, theme: "sport", sourceUrl: "https://www.adidasarena.com/programmation", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/a87a8e72-db25-40fc-bb64-341c35a1df3a.jpeg" },
+        { city: "Paris", title: "No Leash, No Limit — Winter Edition", poster: "No Leash", category: "Clubs", date: "sam. 21 nov. · 23h", dateEn: "Sat. 21 Nov. · 23:00", venue: "Le Klub · Paris 1er", publicPrice: 24, current: 7, minimum: 9, theme: "club", sourceUrl: "https://r.shotgun.live/fr/events/no-leash-no-limit-winter-edition", imageUrl: "https://res.cloudinary.com/shotgun/image/upload/c_limit%2Car_16%3A9%2Cw_3840/fl_lossy/f_auto/q_auto/production/artworks/NLNL_Winter_Shotgun_2_ryufvi.png" },
+        { city: "Paris", title: "Paris Saint-Germain vs AS Roma", poster: "PSG · Roma", category: "Sport", date: "mer. 25 nov. · 21h", dateEn: "Wed. 25 Nov. · 21:00", venue: "Parc des Princes · Paris 16e", publicPrice: 72, current: 8, minimum: 10, theme: "football", sourceUrl: "https://www.psg.fr/content/le-calendrier-europeen-des-parisiens-est-connu-psg-paris-saint-germain-ucl-champions-league-programmation-2026-2027", imageUrl: "https://media.psg.fr/image/upload/w_3840%2Cc_fill%2Cg_auto%2Car_16%3A9/f_avif%2Cq_75/_A9_3853_xrnfs2" },
+        { city: "Paris", title: "Paris Saint-Germain vs FC Lorient", poster: "PSG · Lorient", category: "Sport", date: "sam. 28 nov. · 19h45", dateEn: "Sat. 28 Nov. · 19:45", venue: "Parc des Princes · Paris 16e", publicPrice: 52, current: 7, minimum: 9, theme: "football", sourceUrl: "https://www.psg.fr/football-masculin/calendrier/season/2026-27?competition=Ligue_1", imageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/psg-logo_avcznk", secondaryImageUrl: "https://media.psg.fr/image/upload/w_3840/f_avif%2Cq_75/FC_Lorient_wsx1in" },
+        { city: "Paris", title: "World Championships Breaking & Hip-Hop Freestyle", poster: "Breaking Worlds", category: "Sport", date: "sam. 5–dim. 6 déc.", dateEn: "Sat. 5–Sun. 6 Dec.", venue: "adidas arena · Paris 18e", publicPrice: 38, current: 8, minimum: 10, theme: "sport", sourceUrl: "https://www.adidasarena.com/programmation", imageUrl: "https://www.accorarena.com/uploads/aha/generated/w800%2Ch800%2Cfcrop%2Cq85/13256755-a8fe-4df8-ba9d-ea74ebbe71c8.jpg" }
       ]);
 
       // A tighter Paris catalogue avoids splitting early interest across too
@@ -1397,6 +1478,46 @@
         var startsAt = prototypeEventStartDate(event);
         return startsAt && startsAt >= minimumPrototypeEventDate;
       });
+
+      function arrondirEuro(montant) {
+        return Math.round((Number(montant) + Number.EPSILON) * 100) / 100;
+      }
+
+      function tarifGroupe(event) {
+        return arrondirEuro(Number(event.publicPrice) * (1 - TARIFICATION.REMISE_GROUPE));
+      }
+
+      function fraisService(event) {
+        var groupe = tarifGroupe(event);
+        if (TARIFICATION.MODE_FRAIS_SERVICE === "pourcentage") {
+          return arrondirEuro(Math.max(
+            TARIFICATION.FRAIS_SERVICE_MINIMUM,
+            groupe * TARIFICATION.TAUX_FRAIS_SERVICE
+          ));
+        }
+        return TARIFICATION.FRAIS_SERVICE_FIXE;
+      }
+
+      function prixSansAbonnement(event) {
+        return arrondirEuro(tarifGroupe(event) + fraisService(event));
+      }
+
+      function remiseGroupe(event) {
+        return arrondirEuro(Number(event.publicPrice) - tarifGroupe(event));
+      }
+
+      function sortiesPourRentabiliser(event) {
+        return Math.max(1, Math.ceil(TARIFICATION.PRIX_ABONNEMENT_MENSUEL / Math.max(.01, fraisService(event))));
+      }
+
+      function formatEuro(montant) {
+        var value = arrondirEuro(montant);
+        var decimals = Math.abs(value - Math.round(value)) > .001 ? 2 : 0;
+        return value.toLocaleString("fr-FR", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: 2
+        }) + " €";
+      }
 
       // A stable key makes a live interest follow its event even when the
       // catalogue is filtered or its visual position changes.
@@ -1506,7 +1627,9 @@
         profileDraft: storedPersonalProfile(),
         dark: true,
         locale: "fr",
-        joinStatus: ""
+        joinStatus: "",
+        survey: null,
+        surveyStatus: ""
       };
 
       var live = {
@@ -1758,13 +1881,11 @@
       }
 
       function applyLocale() {
-        var english = state.locale === "en";
-        document.documentElement.lang = english ? "en" : "fr";
-        document.title = english ? "Never Go Alone — Find your people" : "Never Go Alone";
-        introLead.textContent = english ? "Events and people to meet." : "Des événements et des personnes à rencontrer.";
-        sideNote.textContent = english ? "Interactive prototype — events and data are fictional." : "Prototype interactif — les événements et les données sont fictifs.";
-        phone.setAttribute("aria-label", english ? "Never Go Alone mobile prototype" : "Prototype mobile Never Go Alone");
-        localizeElement(app);
+        document.documentElement.lang = "fr";
+        document.title = "Never Go Alone";
+        introLead.textContent = "Des événements et des personnes à rencontrer.";
+        sideNote.textContent = "Prototype interactif — les événements, tarifs et données sont fictifs.";
+        phone.setAttribute("aria-label", "Prototype mobile Never Go Alone");
       }
 
       function esc(value) {
@@ -1774,7 +1895,7 @@
       }
 
       function i18n(french, english) {
-        return state.locale === "en" ? english : french;
+        return french;
       }
 
       function profileGenderLabel(value) {
@@ -1966,7 +2087,7 @@
       }
 
       function interestLabel(option) {
-        return state.locale === "en" ? option.en : option.fr;
+        return option.fr;
       }
 
       function eventInterestMatches(event) {
@@ -2009,7 +2130,7 @@
 
       function eventDate(event) {
         var currentEvent = event || selectedEvent();
-        return state.locale === "en" && currentEvent.dateEn ? currentEvent.dateEn : currentEvent.date;
+        return currentEvent.date;
       }
 
       function eventVenue(event) {
@@ -2018,13 +2139,13 @@
       }
 
       function officialSourceLink(event) {
-        if (!event || !/^https:\/\//.test(event.sourceUrl || "")) return "";
-        return "<a class='source-link' href='" + esc(event.sourceUrl) + "' target='_blank' rel='noopener noreferrer'>Voir l’événement ↗</a>";
+        // Les sorties de ce prototype restent fictives. On ne redirige donc
+        // pas vers une billetterie ou un organisateur réel.
+        return "";
       }
 
       function upcomingEventsNote(count) {
-        return state.locale === "en" ? count + " upcoming events from 9 October · group prices are simulated." :
-          count + " sorties à venir à partir du 9 octobre · tarifs de groupe simulés.";
+        return count + " sorties fictives à découvrir · tarifs et groupes simulés pour le prototype.";
       }
 
       function navigate(screen) {
@@ -2146,7 +2267,7 @@
       }
 
       function poster(event, extraClass) {
-        var posterAlt = state.locale === "en" ? "Poster for " + event.title : "Affiche de " + event.title;
+        var posterAlt = "Affiche de " + event.title;
         var imageLoading = extraClass ? "eager" : "lazy";
         var artwork = event.secondaryImageUrl ? "<div class='matchup-artwork' aria-hidden='true'><img src='" + esc(event.imageUrl) + "' alt='' loading='" + imageLoading + "' decoding='async' referrerpolicy='no-referrer'><span>VS</span><img src='" + esc(event.secondaryImageUrl) + "' alt='' loading='" + imageLoading + "' decoding='async' referrerpolicy='no-referrer'></div>" :
           event.imageUrl ? "<img class='event-artwork " + (event.imageFit === "contain" ? "contain" : "") + "' src='" + esc(event.imageUrl) + "' alt='" + esc(posterAlt) + "' loading='" + imageLoading + "' decoding='async' referrerpolicy='no-referrer' onerror='this.hidden=true'>" : "";
@@ -2158,14 +2279,14 @@
         var count = liveCount(event);
         var percentage = Math.min(100, Math.round((count / event.minimum) * 100));
         var countLabel = count ? i18n(count + " intérêt" + (count > 1 ? "s" : "") + " en direct", count + " live interest" + (count > 1 ? "s" : "")) : i18n("Premier intérêt attendu", "Be the first to join");
-        var groupLabel = i18n(count + " sur " + event.minimum + " pour le tarif groupe", count + " of " + event.minimum + " for the group price");
+        var groupLabel = count ? count + " personne" + (count > 1 ? "s" : "") + " intéressée" + (count > 1 ? "s" : "") : "Groupe à créer";
         var dots = count ? "● ".repeat(Math.min(3, count)).trim() : "○ ○ ○";
         return "<button type='button' class='event-card' data-action='open-event' data-event-id='" + index + "'>" +
           poster(event) +
           "<div class='event-copy'>" + eventInterestBadge(event) + "<h3>" + esc(event.title) + "</h3>" +
           "<p>" + esc(eventDate(event)) + " · " + esc(eventVenue(event)) + "</p>" +
-          "<div class='price-line'><b>" + event.groupPrice + " €</b><s>" + event.publicPrice + " €</s>" +
-          "<span class='tiny'>−" + Math.round((1 - event.groupPrice / event.publicPrice) * 100) + " %</span></div>" +
+          "<div class='price-line'><b>" + esc(formatEuro(tarifGroupe(event))) + "</b><s>" + esc(formatEuro(event.publicPrice)) + "</s>" +
+          "<span class='tiny'>−" + Math.round(TARIFICATION.REMISE_GROUPE * 100) + " %</span></div>" +
           "<div class='progress'><span style='width:" + percentage + "%'></span></div>" +
           "<div class='event-meta'><span>" + esc(groupLabel) + "</span>" +
           "<span class='member-dots' aria-label='" + esc(countLabel) + "'>" + dots + "</span></div>" +
@@ -2197,23 +2318,16 @@
           "</div></div>" + bottomNav("explore") + "</section>";
       }
 
-      function languagePicker(extraClass) {
-        return "<div class='language-picker " + esc(extraClass || "") + "' aria-label='" + esc(i18n("Choisir la langue", "Choose language")) + "'><span>" + esc(i18n("Langue", "Language")) + "</span>" +
-          "<button type='button' data-action='set-locale' data-locale='fr' aria-pressed='" + (state.locale === "fr") + "' class='" + (state.locale === "fr" ? "active" : "") + "'>Français</button>" +
-          "<button type='button' data-action='set-locale' data-locale='en' aria-pressed='" + (state.locale === "en") + "' class='" + (state.locale === "en" ? "active" : "") + "'>English</button></div>";
-      }
-
       function welcome() {
         var draft = state.profileDraft || normalisePersonalProfile({});
         var selectedCount = state.interests.length;
         var selectedGender = ["woman", "man", "unspecified"].indexOf(draft.gender) >= 0 ? draft.gender : "unspecified";
         var interestChoices = interestOptions.map(function (option) {
           var selected = state.interests.indexOf(option.id) >= 0;
-          return "<button type='button' class='interest-choice " + (selected ? "selected" : "") + "' data-action='toggle-interest' data-interest-id='" + esc(option.id) + "' aria-pressed='" + selected + "'><span class='interest-icon' aria-hidden='true'>" + esc(option.icon) + "</span><span><b>" + esc(interestLabel(option)) + "</b><small>" + esc(state.locale === "en" ? option.detailEn : option.detailFr) + "</small></span></button>";
+          return "<button type='button' class='interest-choice " + (selected ? "selected" : "") + "' data-action='toggle-interest' data-interest-id='" + esc(option.id) + "' aria-pressed='" + selected + "'><span class='interest-icon' aria-hidden='true'>" + esc(option.icon) + "</span><span><b>" + esc(interestLabel(option)) + "</b><small>" + esc(option.detailFr) + "</small></span></button>";
         }).join("");
         return "<section class='view welcome-screen'>" + header(i18n("Ton profil", "Your profile")) + "<div class='scroll welcome-scroll'>" +
           "<span class='welcome-kicker'>🧭 " + esc(i18n("NEVER GO ALONE · PROTOTYPE LIVE", "NEVER GO ALONE · LIVE PROTOTYPE")) + "</span>" +
-          languagePicker("welcome-language") +
           "<h1>" + esc(i18n("Avant de sortir, parlons un peu de toi.", "Before going out, let’s get to know you.")) + "</h1>" +
           "<p class='welcome-lead'>" + esc(i18n("Ces informations personnalisent cette visite uniquement. Elles ne sont ni ajoutées au lien, ni enregistrées dans ton navigateur, et ne deviennent visibles dans un groupe qu’après une participation finalisée.", "These details personalise this visit only. They are neither added to the link nor stored in your browser, and only become visible in a group after participation is completed.")) + "</p>" +
           "<form id='onboarding-form' novalidate autocomplete='off'><section class='onboarding-profile' aria-label='" + esc(i18n("Tes informations", "Your details")) + "'><div class='onboarding-profile-head'><span class='onboarding-profile-icon' aria-hidden='true'>👋</span><div><h2>" + esc(i18n("On commence par toi.", "Let’s start with you.")) + "</h2><p>" + esc(i18n("Prénom, nom et âge sont nécessaires pour créer ton profil. Le sexe est facultatif.", "First name, last name and age are needed to create your profile. Sex is optional.")) + "</p></div></div>" +
@@ -2232,7 +2346,7 @@
 
       function eventDetail() {
         var event = selectedEvent();
-        var saving = event.publicPrice - event.groupPrice;
+        var saving = remiseGroupe(event);
         var count = liveCount(event);
         var hasRegisteredInterest = !!rememberedWithdrawal(event);
         var liveLabel = count ? i18n(count + " personne" + (count > 1 ? "s ont" : " a") + " déjà signalé son intérêt.", count + " person" + (count > 1 ? "s have" : " has") + " already registered interest.") : i18n("Le groupe live est prêt à accueillir sa première personne.", "The live group is ready for its first person.");
@@ -2246,8 +2360,8 @@
           "<br>" + esc(eventDate(event)) + "<br>Rendez-vous 30 min avant le début.</p>" + officialSourceLink(event) +
           "<div class='live-banner'>" + esc(liveLabel) + "</div>" +
           "<div class='info-card'><b>Une sortie à partager</b><p>Découvre les profils intéressés, puis laisse tes coordonnées pour faire grandir ce groupe live.</p></div>" +
-          "<div class='info-card'><b>Prix transparent</b><p>Billet groupe : " + event.groupPrice +
-          " € · Frais de service : 2,50 €<br>Économie totale : " + saving + " €</p><p class='tiny'>Tarifs affichés à titre indicatif pour le lancement.</p></div>" +
+          "<div class='info-card'><b>Prix fictifs du prototype</b><p>Plein tarif individuel : " + esc(formatEuro(event.publicPrice)) +
+          "<br>Tarif groupe Never Go Alone : " + esc(formatEuro(tarifGroupe(event))) + " (−" + Math.round(TARIFICATION.REMISE_GROUPE * 100) + " %)</p><p class='tiny'>Soit " + esc(formatEuro(saving)) + " de remise groupe simulée. Les frais de service et les formules sont détaillés avant de rejoindre le groupe.</p></div>" +
           "<button type='button' class='primary ghost' data-action='people'>" + esc(peopleLabel) + "</button>" +
           interestManager +
           "</div><div class='fixed-action'><button type='button' class='primary " + (hasRegisteredInterest ? "ghost" : "coral") + "' data-action='" + (hasRegisteredInterest ? "people" : "join") + "'>" + esc(hasRegisteredInterest ? peopleLabel : i18n("Rejoindre le groupe", "Join the group")) + "</button></div></section>";
@@ -2311,7 +2425,106 @@
           "</div></section>";
       }
 
+      function createSurveySessionId() {
+        if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+        var bytes = new Uint8Array(16);
+        if (window.crypto && typeof window.crypto.getRandomValues === "function") window.crypto.getRandomValues(bytes);
+        else for (var index = 0; index < bytes.length; index += 1) bytes[index] = Math.floor(Math.random() * 256);
+        bytes[6] = (bytes[6] & 15) | 64;
+        bytes[8] = (bytes[8] & 63) | 128;
+        var hex = Array.prototype.map.call(bytes, function (byte) { return byte.toString(16).padStart(2, "0"); }).join("");
+        return hex.slice(0, 8) + "-" + hex.slice(8, 12) + "-" + hex.slice(12, 16) + "-" + hex.slice(16, 20) + "-" + hex.slice(20);
+      }
+
+      function activeSurvey() {
+        var survey = state.survey;
+        return survey && survey.eventId === selectedEvent().id ? survey : null;
+      }
+
+      function startGroupSurvey() {
+        var event = selectedEvent();
+        var survey = activeSurvey();
+        if (!survey || survey.completed) {
+          state.survey = {
+            sessionId: createSurveySessionId(),
+            eventId: event.id,
+            situation: "",
+            offerUseful: "",
+            completed: false
+          };
+        }
+        state.surveyStatus = "";
+        navigate("situation");
+      }
+
+      function journeyProgress(step, label) {
+        return "<div class='journey-progress'>Étape " + step + " sur 3 <span>· " + esc(label) + "</span></div>";
+      }
+
+      function surveyOption(name, value, label, selected) {
+        return "<label class='survey-option'><input type='radio' name='" + esc(name) + "' value='" + esc(value) + "'" + (selected === value ? " checked" : "") + " required><span>" + esc(label) + "</span></label>";
+      }
+
+      function surveyFeedback(message) {
+        var feedback = app.querySelector("#survey-feedback");
+        if (feedback) feedback.textContent = message || "";
+      }
+
+      function saveSurveyStage(stage, values) {
+        var survey = activeSurvey();
+        if (!survey) return Promise.reject(new Error("Le parcours de test doit être repris depuis la sortie."));
+        var details = values || {};
+        var body = {
+          sessionId: survey.sessionId,
+          eventId: survey.eventId,
+          stage: stage,
+          situation: survey.situation
+        };
+        if (stage === "offer" || stage === "pricing") body.offerUseful = survey.offerUseful;
+        if (stage === "pricing") {
+          body.subscriptionPreference = details.subscriptionPreference;
+          body.acceptableServiceFee = details.acceptableServiceFee;
+          body.subscriptionFeedback = details.subscriptionFeedback || "";
+        }
+        return apiRequest("/api/survey-sessions", {
+          method: "POST",
+          headers: { "content-type": "application/json", "accept": "application/json" },
+          body: JSON.stringify(body)
+        });
+      }
+
+      function situationPage() {
+        var survey = activeSurvey();
+        if (!survey) return "<section class='view'>" + header("La situation") + "<div class='scroll'><div class='empty'><h2>Choisis d’abord une sortie.</h2><p>Le court sondage est lié à la sortie que tu veux rejoindre.</p><button type='button' class='primary' data-action='explore'>Explorer les sorties</button></div></div></section>";
+        return "<section class='view'>" + header("La situation") + "<div class='scroll live-form'>" + journeyProgress(1, "La situation") +
+          "<h1>Avant de rejoindre</h1><p class='muted'>Quelques questions pour comprendre ce qui rendrait ce service vraiment utile.</p>" +
+          "<form id='survey-situation-form' class='survey-card' novalidate><h2>🤔 Quand une sortie te tente</h2><p class='survey-question'>Un événement te tente, mais personne de ton entourage ne peut ou ne veut t'accompagner. Que se passe-t-il le plus souvent ?</p>" +
+          surveyOption("survey-situation", "drop", "Je laisse tomber", survey.situation) +
+          surveyOption("survey-situation", "unenthusiastic", "J'y vais quand même, mais sans grand enthousiasme", survey.situation) +
+          surveyOption("survey-situation", "alone-fine", "J'y vais seul(e) sans aucun problème", survey.situation) +
+          "<p class='survey-privacy-note'>Réponse anonyme : aucun nom, e-mail ni profil n’est demandé pour cette étape.</p><p id='survey-feedback' class='feedback' role='status' aria-live='polite'></p><button type='submit' class='primary coral'>Continuer</button></form></div></section>";
+      }
+
+      function offerPage() {
+        var survey = activeSurvey();
+        if (!survey || !survey.situation) return situationPage();
+        return "<section class='view'>" + header("L’offre") + "<div class='scroll live-form'>" + journeyProgress(2, "L’offre") +
+          "<h1>Une sortie, mais pas seul(e).</h1><section class='survey-card'><h2>🤝 Le principe</h2><p>Avec Never Go Alone, tu rejoins un petit groupe de personnes qui ont envie de faire la même sortie que toi. Vous pouvez faire connaissance et vous rencontrer avant l’événement.</p><p style='margin-top:10px'>Tu bénéficies aussi d’un tarif de groupe réduit. Si tu y allais seul(e), sans passer par l’application, tu paierais le plein tarif de l’événement.</p></section>" +
+          "<form id='survey-offer-form' class='survey-card' novalidate><p class='survey-question'>Est-ce que ce service te serait utile ?</p>" +
+          surveyOption("survey-offer-useful", "yes", "Oui, ça m’intéresse", survey.offerUseful) +
+          surveyOption("survey-offer-useful", "no", "Non, ça ne m’intéresse pas", survey.offerUseful) +
+          "<p class='survey-privacy-note'>Ta réponse reste séparée du profil de groupe. Elle sert uniquement à analyser le prototype de façon anonyme.</p><p id='survey-feedback' class='feedback' role='status' aria-live='polite'></p><button type='submit' class='primary coral'>Continuer</button></form></div></section>";
+      }
+
+      function offerThanksPage() {
+        return "<section class='view'>" + homeHeader("Merci") + "<div class='scroll'><div class='empty'><h2>Merci pour ton retour. ✨</h2><p>Ta réponse anonyme est enregistrée. Elle nous aide à vérifier si Never Go Alone répond à un vrai besoin, sans créer de profil ni demander de coordonnées.</p><button type='button' class='primary' data-action='explore'>Retour aux sorties</button></div></div></section>";
+      }
+
       function joinPage() {
+        var survey = activeSurvey();
+        if (!survey || survey.offerUseful !== "yes") {
+          return "<section class='view'>" + header("Rejoindre le groupe") + "<div class='scroll'><div class='empty'><h2>Commence par le court sondage.</h2><p>Il permet de personnaliser cette simulation avant les informations de groupe.</p><button type='button' class='primary' data-action='join'>Commencer</button></div></div></section>";
+        }
         return "<section class='view'>" + header("Rejoindre le groupe") + liveJoinForm(selectedEvent()) + "</section>";
       }
 
@@ -2320,54 +2533,50 @@
         var waiting = state.joinStatus === "sending";
         var personal = state.personalProfile || normalisePersonalProfile({});
         var savedGender = ["woman", "man"].indexOf(personal.gender) >= 0 ? personal.gender : "unspecified";
-        var countNote = count ? i18n(count + " personne" + (count > 1 ? "s sont" : " est") + " déjà intéressée" + (count > 1 ? "s" : "") + ".", count + " person" + (count > 1 ? "s are" : " is") + " already interested.") : i18n("Tu peux lancer ce groupe live.", "You can start this live group.");
-        var saving = Math.max(0, Number(event.publicPrice) - Number(event.groupPrice));
-        var savingsMessage = saving >= 2.99
-          ? i18n("Dans cette simulation, la réduction de " + saving + " € sur cette sortie pourrait déjà couvrir environ un mois d’abonnement.", "In this simulation, the €" + saving + " discount for this event could already cover about one month of membership.")
-          : i18n("Dans cette simulation, une ou deux sorties avec un tarif groupe pourraient couvrir un mois d’abonnement.", "In this simulation, one or two group-rate events could cover a month of membership.");
-        return "<div class='scroll live-form'><h1>" + esc(i18n("Rejoins ce groupe", "Join this group")) + "</h1>" +
-          "<p class='muted'>" + esc(i18n("Remplis ce seul formulaire. En cliquant sur « Envoyer », ta réponse est transmise et ton profil est ajouté automatiquement au groupe.", "Complete this single form. When you press “Send”, your response is sent and your profile is automatically added to the group.")) + "</p>" +
+        var countNote = count ? count + " personne" + (count > 1 ? "s sont" : " est") + " déjà intéressée" + (count > 1 ? "s" : "") + "." : "Tu peux lancer ce groupe live.";
+        var publicPrice = Number(event.publicPrice);
+        var groupPrice = tarifGroupe(event);
+        var serviceFee = fraisService(event);
+        var noSubscriptionPrice = prixSansAbonnement(event);
+        var groupSaving = remiseGroupe(event);
+        var tripsToBreakEven = sortiesPourRentabiliser(event);
+        var noSubscriptionNote = groupSaving > serviceFee
+          ? "Sans abonnement, la remise groupe reste supérieure aux frais de service : " + formatEuro(groupSaving - serviceFee) + " d’écart par rapport au plein tarif dans cette simulation."
+          : "Sans abonnement, les montants sont simplement affichés : la remise groupe ne couvre pas entièrement les frais de service dans cette simulation.";
+        return "<div class='scroll live-form'>" + journeyProgress(3, "Rejoindre le groupe") +
+          "<h1>Rejoins ce groupe</h1><p class='muted'>Tu as indiqué que le service t’intéressait. Voici la dernière étape du test, puis tu pourras ajouter ton profil à ce groupe fictif.</p>" +
           "<div class='live-banner'>" + esc(countNote) + "</div>" +
           "<form id='live-interest-form' novalidate autocomplete='off'>" +
-          "<p class='tiny'>✨ " + esc(i18n("Les informations de ton profil sont préremplies. Tu peux les modifier pour cette sortie.", "Your profile details are pre-filled. You can edit them for this event.")) + "</p>" +
-          "<div class='two-columns'><div class='field'><label for='live-first-name'>" + esc(i18n("Prénom", "First name")) + "</label><input id='live-first-name' name='firstName' maxlength='30' autocomplete='off' value='" + esc(personal.firstName || "") + "' required></div>" +
-          "<div class='field'><label for='live-last-name'>" + esc(i18n("Nom", "Last name")) + "</label><input id='live-last-name' name='lastName' maxlength='50' autocomplete='off' value='" + esc(personal.lastName || "") + "' required></div></div>" +
-          "<div class='field'><label for='live-email'>" + esc(i18n("E-mail", "Email")) + "</label><input id='live-email' name='email' type='email' maxlength='254' autocomplete='off' inputmode='email' required></div>" +
-          "<div class='two-columns'><div class='field'><label for='live-age'>" + esc(i18n("Âge", "Age")) + "</label><input id='live-age' name='age' type='number' min='18' max='30' step='1' inputmode='numeric' autocomplete='off' value='" + esc(personal.age === "" ? "" : personal.age) + "' placeholder='24' required></div>" +
-          "<div class='field'><label for='live-nationality'>" + esc(i18n("Nationalité", "Nationality")) + "</label><input id='live-nationality' name='nationality' maxlength='70' autocomplete='off' placeholder='" + esc(i18n("Ex. française, ivoirienne", "E.g. French, Ivorian")) + "' required></div></div>" +
-          "<div class='field'><label for='live-activity'>" + esc(i18n("Activité", "Activity")) + "</label><input id='live-activity' name='activity' maxlength='80' autocomplete='off' placeholder='" + esc(i18n("Ex. master finance", "E.g. master’s in finance")) + "' required></div>" +
-          "<p class='tiny'>🌐 " + esc(i18n("Les intitulés d’activité courants sont affichés dans la langue de l’application. Les intitulés très spécifiques restent inchangés.", "Common activity titles are displayed in the app language. Highly specific titles stay unchanged.")) + "</p>" +
-          "<div class='field'><label for='live-gender'>" + esc(i18n("Sexe", "Sex")) + "</label><select id='live-gender' name='gender'><option value='unspecified'" + (savedGender === "unspecified" ? " selected" : "") + ">" + esc(i18n("Je préfère ne pas préciser", "Prefer not to say")) + "</option><option value='woman'" + (savedGender === "woman" ? " selected" : "") + ">" + esc(i18n("Femme", "Woman")) + "</option><option value='man'" + (savedGender === "man" ? " selected" : "") + ">" + esc(i18n("Homme", "Man")) + "</option></select></div>" +
-          "<div class='field'><label for='live-description'>" + esc(i18n("Décris-toi en quelques mots (facultatif)", "Tell us about yourself (optional)")) + "</label><textarea id='live-description' name='description' maxlength='320' placeholder='" + esc(i18n("Ex. toujours partant·e pour découvrir des sorties et rencontrer du monde.", "E.g. always up for discovering events and meeting new people.")) + "'></textarea></div>" +
-          "<div class='field'><label for='live-passions'>" + esc(i18n("Tes passions (facultatif)", "Your passions (optional)")) + "</label><input id='live-passions' name='passions' maxlength='180' placeholder='" + esc(i18n("Ex. basket, cinéma, cuisine, voyages", "E.g. basketball, cinema, cooking, travel")) + "'></div>" +
-          "<p class='tiny'>" + esc(i18n("Le sexe choisi apparaît sur ton profil. Tu peux choisir « Je préfère ne pas préciser » ; aucune photo réelle n’est demandée.", "Your selected sex appears on your profile. You can select “Prefer not to say”; no real photo is requested.")) + "</p>" +
-          "<p class='tiny'>🪪 " + esc(i18n("Au lancement, les profils seront vérifiés avec une pièce d’identité. Ce prototype ne demande aucun document.", "At launch, profiles will be verified with government-issued ID. This prototype does not request any document.")) + "</p>" +
-          "<section class='launch-feedback' aria-labelledby='launch-feedback-heading'><h2 id='launch-feedback-heading'>💬 " + esc(i18n("Ton retour sur l’application", "Your feedback about the app")) + "</h2><p>" + esc(i18n("Ces réponses sont envoyées au formulaire de lancement. Elles ne sont jamais visibles dans le groupe.", "These answers are sent to the launch questionnaire. They are never visible in the group.")) + "</p>" +
-          "<div class='field'><label>" + esc(i18n("À quel point aimerais-tu utiliser Never Go Alone ?", "How interested are you in using Never Go Alone?")) + "</label>" +
-          "<label class='launch-option'><input type='radio' name='live-launch-interest' value='very' required><span>" + esc(i18n("Très intéressé·e — je l’utiliserais dès son lancement", "Very interested — I would use it right away")) + "</span></label>" +
-          "<label class='launch-option'><input type='radio' name='live-launch-interest' value='interested'><span>" + esc(i18n("Intéressé·e — j’aimerais l’essayer", "Interested — I would like to try it")) + "</span></label>" +
-          "<label class='launch-option'><input type='radio' name='live-launch-interest' value='curious'><span>" + esc(i18n("Curieux·se, mais pas encore sûr·e", "Curious, but not sure yet")) + "</span></label></div>" +
-          "<div class='field'><label for='live-launch-feedback'>" + esc(i18n("Qu’aimerais-tu le plus retrouver ou voir ajouté ?", "What did you like most, or what would you like to see added?")) + "</label><textarea id='live-launch-feedback' name='launchFeedback' maxlength='600' required placeholder='" + esc(i18n("Ton idée ou ton retour…", "Your idea or feedback…")) + "'></textarea></div>" +
-          "<div class='field'><label>" + esc(i18n("Serais-tu disponible pour un échange de 10 minutes ?", "Would you be open to a quick 10-minute chat?")) + "</label>" +
-          "<label class='launch-option'><input type='radio' name='live-launch-chat' value='yes' required><span>" + esc(i18n("Oui, vous pouvez me contacter", "Yes, feel free to contact me")) + "</span></label>" +
-          "<label class='launch-option'><input type='radio' name='live-launch-chat' value='no'><span>" + esc(i18n("Non, merci", "No, thanks")) + "</span></label></div></section>" +
-          "<section class='subscription-test' aria-labelledby='subscription-test-heading'><div class='subscription-test-head'><span class='subscription-test-icon' aria-hidden='true'>🔒</span><div><h2 id='subscription-test-heading'>" + esc(i18n("Accès à la discussion", "Access to the discussion")) + "</h2><p>" + esc(i18n("Dans la version finale, la discussion du groupe, les rencontres avant la sortie et les tarifs groupe seraient inclus dans un abonnement. Dis-nous ce qui te conviendrait.", "In the final app, the group discussion, pre-event meetups and group rates would be included in a membership. Tell us what would work for you.")) + "</p></div></div>" +
-          "<div class='subscription-price'><b>2,99 € " + esc(i18n("/ mois", "/ month")) + "</b><span>" + esc(i18n("prix principal testé", "main price tested")) + "</span></div>" +
-          "<p class='subscription-saving'><b>✨ " + esc(i18n("Une formule qui peut se rentabiliser", "A plan that can pay for itself")) + "</b><br>" + esc(savingsMessage) + " " + esc(i18n("Et surtout : une manière simple de rencontrer des personnes qui partagent tes envies.", "And above all: a simple way to meet people who share your interests.")) + "</p>" +
-          "<div class='field'><label>" + esc(i18n("Quelle formule te conviendrait le mieux ?", "Which option would suit you best?")) + "</label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='monthly' required><span><b>" + esc(i18n("Oui, 2,99 € par mois me conviendrait", "Yes, €2.99 per month would work for me")) + "</b><small>" + esc(i18n("Un accès mensuel aux discussions et aux offres groupe.", "Monthly access to discussions and group offers.")) + "</small></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='quarterly'><span><b>" + esc(i18n("Je préférerais 7,99 € par trimestre", "I would prefer €7.99 per quarter")) + "</b><small>" + esc(i18n("Environ 2,66 € par mois, avec un engagement de trois mois.", "About €2.66 per month, with a three-month commitment.")) + "</small></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='per-event'><span><b>" + esc(i18n("Je préférerais payer seulement à l’événement", "I would rather pay per event")) + "</b><small>" + esc(i18n("Un accès ponctuel plutôt qu’un abonnement.", "One-off access rather than a membership.")) + "</small></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='no'><span><b>" + esc(i18n("Je ne paierais pas d’abonnement", "I would not pay for a membership")) + "</b><small>" + esc(i18n("Ton avis nous aide tout autant à concevoir la bonne formule.", "Your view is just as useful for designing the right model.")) + "</small></span></label></div>" +
-          "<div class='field'><label for='live-subscription-feedback'>" + esc(i18n("Qu’est-ce qui rendrait cette formule plus intéressante ? (facultatif)", "What would make this plan more appealing? (optional)")) + "</label><textarea id='live-subscription-feedback' name='subscriptionFeedback' maxlength='300' placeholder='" + esc(i18n("Ex. davantage de réductions, plus de sorties chaque semaine…", "E.g. more discounts, more weekly events…")) + "'></textarea></div>" +
-          "<p class='subscription-disclaimer'>" + esc(i18n("Test uniquement : aucune carte bancaire, aucun paiement et aucun engagement ne sont demandés aujourd’hui. Ta réponse reste privée et n’apparaît jamais dans le groupe.", "Test only: no bank card, payment or commitment is requested today. Your response stays private and never appears in the group.")) + "</p></section>" +
+          "<section class='subscription-test' aria-labelledby='subscription-test-heading'><div class='subscription-test-head'><span class='subscription-test-icon' aria-hidden='true'>💸</span><div><h2 id='subscription-test-heading'>La formule qui te conviendrait</h2><p>Tous les membres bénéficient du tarif groupe réduit. L’abonnement supprime les frais de service sur toutes les sorties.</p></div></div>" +
+          "<div class='pricing-simulation'><h3>Simulation pour cette sortie</h3><div class='pricing-row'><span>Plein tarif hors application</span><b>" + esc(formatEuro(publicPrice)) + "</b></div><div class='pricing-row'><span>Sans abonnement · tarif groupe + " + esc(formatEuro(serviceFee)) + " de frais</span><b>" + esc(formatEuro(noSubscriptionPrice)) + "</b></div><div class='pricing-row highlight'><span>Avec abonnement · tarif groupe + 0 € de frais</span><b>" + esc(formatEuro(groupPrice)) + "</b></div><p>" + esc(noSubscriptionNote) + " À partir de " + tripsToBreakEven + " sortie" + (tripsToBreakEven > 1 ? "s" : "") + " par mois, les " + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL)) + " sont rentabilisés grâce aux frais de service évités.</p></div>" +
+          "<div class='field'><label>Quelle formule te conviendrait le mieux ?</label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='monthly' required><span><b>" + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL)) + " par mois</b><small>Un accès aux tarifs de groupe sans frais de service</small></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='quarterly'><span><b>" + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_TRIMESTRIEL)) + " par trimestre</b><small>Environ 2,66 € par mois, sans frais de service, avec un engagement de trois mois</small></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='per-event'><span><b>Payer seulement à l’événement</b><small>Tu paies le tarif de groupe plus " + esc(formatEuro(serviceFee)) + " de frais de service à chaque sortie</small></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='no'><span><b>Je ne paierais pas d’abonnement</b><small>Ton avis nous aide tout autant à concevoir la bonne formule.</small></span></label></div>" +
+          "<div class='field'><label>Quel niveau de frais de service te semblerait acceptable par réservation ?</label>" +
+          "<label class='subscription-option'><input type='radio' name='live-acceptable-service-fee' value='1.50' required><span><b>1,50 €</b></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-acceptable-service-fee' value='2'><span><b>2 €</b></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-acceptable-service-fee' value='3'><span><b>3 €</b></span></label></div>" +
+          "<div class='field'><label for='live-subscription-feedback'>Qu’est-ce qui rendrait cette formule plus intéressante ? (facultatif)</label><textarea id='live-subscription-feedback' name='subscriptionFeedback' maxlength='300' placeholder='Ex. davantage de réductions, plus de sorties chaque semaine…'></textarea></div>" +
+          "<p class='subscription-disclaimer'>Test uniquement : aucune carte bancaire, aucun paiement et aucun engagement ne sont demandés. Les montants, événements et données présentés sont fictifs. Ta réponse est privée et n’apparaît jamais dans le groupe.</p></section>" +
+          "<section class='survey-card'><h2>👤 Ton profil pour ce groupe</h2><p>Les réponses tarifaires ci-dessus sont enregistrées dans un sondage anonyme séparé. Les informations suivantes servent uniquement à afficher ton profil si tu finalises ton intérêt pour cette sortie.</p></section>" +
+          "<p class='tiny'>✨ Les informations de ton profil sont préremplies. Tu peux les modifier pour cette sortie.</p>" +
+          "<div class='two-columns'><div class='field'><label for='live-first-name'>Prénom</label><input id='live-first-name' name='firstName' maxlength='30' autocomplete='off' value='" + esc(personal.firstName || "") + "' required></div><div class='field'><label for='live-last-name'>Nom</label><input id='live-last-name' name='lastName' maxlength='50' autocomplete='off' value='" + esc(personal.lastName || "") + "' required></div></div>" +
+          "<div class='field'><label for='live-email'>E-mail (privé)</label><input id='live-email' name='email' type='email' maxlength='254' autocomplete='off' inputmode='email' required></div>" +
+          "<div class='two-columns'><div class='field'><label for='live-age'>Âge</label><input id='live-age' name='age' type='number' min='18' max='30' step='1' inputmode='numeric' autocomplete='off' value='" + esc(personal.age === "" ? "" : personal.age) + "' placeholder='24' required></div><div class='field'><label for='live-nationality'>Nationalité</label><input id='live-nationality' name='nationality' maxlength='70' autocomplete='off' placeholder='Ex. française, ivoirienne' required></div></div>" +
+          "<div class='field'><label for='live-activity'>Activité</label><input id='live-activity' name='activity' maxlength='80' autocomplete='off' placeholder='Ex. master finance' required></div>" +
+          "<p class='tiny'>🌐 Les intitulés d’activité courants sont affichés dans la langue de l’application. Les intitulés très spécifiques restent inchangés.</p>" +
+          "<div class='field'><label for='live-gender'>Sexe</label><select id='live-gender' name='gender'><option value='unspecified'" + (savedGender === "unspecified" ? " selected" : "") + ">Je préfère ne pas préciser</option><option value='woman'" + (savedGender === "woman" ? " selected" : "") + ">Femme</option><option value='man'" + (savedGender === "man" ? " selected" : "") + ">Homme</option></select></div>" +
+          "<div class='field'><label for='live-description'>Décris-toi en quelques mots (facultatif)</label><textarea id='live-description' name='description' maxlength='320' placeholder='Ex. toujours partant·e pour découvrir des sorties et rencontrer du monde.'></textarea></div>" +
+          "<div class='field'><label for='live-passions'>Tes passions (facultatif)</label><input id='live-passions' name='passions' maxlength='180' placeholder='Ex. basket, cinéma, cuisine, voyages'></div>" +
+          "<p class='tiny'>Le sexe choisi apparaît sur ton profil. Tu peux choisir « Je préfère ne pas préciser » ; aucune photo réelle n’est demandée.</p><p class='tiny'>🪪 Au lancement, les profils seront vérifiés avec une pièce d’identité. Ce prototype ne demande aucun document.</p>" +
+          "<div class='privacy-card'><b>🔒 Tes données personnelles restent privées</b><p>Aucune donnée nominative n’est transmise aux organisateurs. Pour eux, Never Go Alone ne présenterait que des statistiques agrégées et anonymisées ainsi que des volumes potentiels de participants. Tout partage nominatif nécessiterait ton consentement distinct.</p></div>" +
           "<div class='honeypot' aria-hidden='true'><label for='live-website'>Website</label><input id='live-website' name='website' tabindex='-1' autocomplete='off'></div>" +
-          "<label class='check'><input id='live-adult' type='checkbox' required><span>" + esc(i18n("J’ai au moins 18 ans.", "I am at least 18 years old.")) + "</span></label>" +
-          "<label class='check'><input id='live-public-consent' type='checkbox' required><span>" + esc(i18n("J’accepte que mon prénom, mon âge, ma nationalité, mon genre renseigné, mon activité, ma description, mes passions et mon avatar illustré soient visibles sur la fiche de cet événement. Mon nom et mon e-mail ne seront jamais affichés.", "I agree that my first name, age, nationality, chosen gender, activity, introduction, passions and illustrated avatar can appear on this event page. My last name and email will never be displayed.")) + "</span></label>" +
-          "<label class='check'><input id='live-contact-consent' type='checkbox' required><span>" + esc(i18n("J’accepte que mon e-mail et mes réponses ci-dessus, y compris ma préférence d’abonnement, soient transmis au formulaire de lancement. Ils restent privés et ne seront jamais affichés dans le groupe.", "I agree that my email and answers above, including my membership preference, are sent to the launch questionnaire. They remain private and will never be displayed in the group.")) + "</span></label>" +
-          "<p id='live-join-feedback' class='feedback' role='status' aria-live='polite'></p>" +
-          "<div class='live-form-actions'><button type='submit' class='primary coral'" + (waiting ? " disabled" : "") + ">" + esc(waiting ? i18n("Envoi…", "Sending…") : i18n("Envoyer", "Send")) + "</button></div>" +
-          "</form></div>";
+          "<label class='check'><input id='live-adult' type='checkbox' required><span>J’ai au moins 18 ans.</span></label>" +
+          "<label class='check'><input id='live-public-consent' type='checkbox' required><span>J’accepte que mon prénom, mon âge, ma nationalité, mon genre renseigné, mon activité, ma description, mes passions et mon avatar illustré soient visibles sur la fiche de cet événement. Mon nom et mon e-mail ne seront jamais affichés.</span></label>" +
+          "<label class='check'><input id='live-contact-consent' type='checkbox'><span>Je souhaite recevoir les nouvelles de Never Go Alone par e-mail (facultatif). Mon e-mail est transmis à l’équipe Never Go Alone, jamais aux organisateurs sans mon accord distinct.</span></label>" +
+          "<p id='live-join-feedback' class='feedback' role='status' aria-live='polite'></p><div class='live-form-actions'><button type='submit' class='primary coral'" + (waiting ? " disabled" : "") + ">" + esc(waiting ? "Envoi…" : "Envoyer et ajouter mon profil") + "</button></div></form></div>";
       }
 
       function contactPage() {
@@ -2377,7 +2586,7 @@
         return "<section class='view'>" + homeHeader(i18n("C’est envoyé", "Sent")) + "<div class='scroll'>" +
           "<h1>" + esc(i18n("Ton profil a été ajouté", "Your profile has been added")) + "</h1>" +
           "<div class='success-card'><b>✓ " + esc(i18n("Ton formulaire a été envoyé et ton profil est maintenant visible dans ce groupe live.", "Your form was sent and your profile is now visible in this live group.")) + "</b><p>" + esc(countNote) + "</p></div>" +
-          "<p class='muted'>" + esc(i18n("Merci pour ton retour, y compris sur l’accès futur à la discussion. Aucun paiement n’a été demandé aujourd’hui et il n’y a aucune confirmation supplémentaire à cliquer.", "Thanks for your feedback, including on future access to the discussion. No payment was requested today and there is no extra confirmation to click.")) + "</p>" +
+          "<p class='muted'>Merci pour ton retour. Ton sondage tarifaire est enregistré anonymement, séparément de ton profil. Aucun paiement, aucune carte bancaire et aucun engagement n’ont été demandés aujourd’hui.</p>" +
           "<button type='button' class='primary' data-action='home'>" + esc(i18n("Retourner à l’accueil", "Return to Home")) + "</button>" +
           "<button type='button' class='primary ghost withdraw-button' data-action='withdraw'>" + esc(i18n("Retirer mon intérêt", "Remove my interest")) + "</button>" +
           "<p id='withdraw-feedback' class='feedback' role='status' aria-live='polite'></p>" +
@@ -2439,7 +2648,7 @@
           "<option value='J-7'" + (reservation.day === "J-7" ? " selected" : "") + ">J-7</option></select></div>";
 
         if (!confirmed) {
-          html += "<div class='status neutral'>Le groupe peut choisir d'y aller même sans atteindre le tarif groupe.</div>" +
+          html += "<div class='status neutral'>Le groupe peut choisir d’y aller même à effectif réduit.</div>" +
             "<button type='button' class='primary' data-action='keep-small'>On maintient la sortie à " + event.current + "</button>";
         } else if (reservation.paid) {
           html += "<div class='status'>✓ Billet confirmé. Rendez-vous 30 min avant l'événement.</div>" +
@@ -2447,7 +2656,7 @@
         } else if (paymentAvailable) {
           html += "<div class='status'>Le groupe est prêt : confirme ta place pour déclencher le paiement.</div>" +
             "<button type='button' class='primary' data-action='pay'>Confirmer et payer " +
-            (event.groupPrice + 2.5).toFixed(2).replace(".", ",") + " €</button>";
+            formatEuro(prixSansAbonnement(event)) + "</button>";
         } else {
           html += "<div class='status neutral'>Paiement disponible à J-7 seulement.</div>";
         }
@@ -2482,7 +2691,6 @@
           "<div class='profile-card'><b>🔒 " + esc(i18n("Informations de cette visite", "Details for this visit")) + "</b><p>" + esc(i18n("Ton prénom, ton nom, ton âge et ton sexe servent à personnaliser ce prototype. Ils ne sont pas enregistrés dans le navigateur et deviennent visibles dans un groupe seulement après une participation finalisée.", "Your first name, last name, age and sex personalise this prototype. They are not stored in the browser and only become visible in a group after participation is completed.")) + "</p><button type='button' class='profile-inline-action' data-action='edit-profile'>" + esc(i18n("Modifier mes informations", "Edit my details")) + "</button></div>" +
           "<div class='profile-card verification-card'><b>🪪 " + esc(i18n("Vérification d’identité au lancement", "Identity verification at launch")) + "</b><p>" + esc(i18n("Dans la version finale, chaque profil sera vérifié avec une pièce d’identité. Ce prototype ne demande, ne collecte et ne conserve aucun document d’identité.", "In the final version, every profile will be verified with government-issued ID. This prototype does not request, collect or retain any identity document.")) + "</p></div>" +
           "<div class='profile-card'><b>✨ " + esc(i18n("Mes envies", "My interests")) + "</b><p>" + esc(interestsSummary) + "</p><button type='button' class='profile-inline-action' data-action='edit-interests'>" + esc(i18n("Modifier ma sélection", "Edit my selection")) + "</button></div>" +
-          languagePicker("") +
           "<button type='button' class='primary' data-action='about'>" + esc(i18n("📖 Découvrir Never Go Alone", "📖 Discover Never Go Alone")) + "</button>" +
           "<div style='height:8px'></div><button type='button' class='primary ghost' data-action='toggle-dark'>" +
           (state.dark ? "Passer en mode clair" : "Passer en mode sombre") + "</button></div>" + bottomNav("profile") + "</section>";
@@ -2522,7 +2730,7 @@
         var finalAction = isLanding ? "start-onboarding" : "edit-profile";
         var finalLabel = isLanding ? i18n("✨ Créer mon profil", "✨ Create my profile") : i18n("✨ Créer ou modifier mon profil", "✨ Create or edit my profile");
         return "<section class='view " + (isLanding ? "landing-screen" : "") + "'>" + (isLanding ? "" : header(i18n("À propos", "About"))) + "<div class='scroll about-scroll" + (isLanding ? "" : " with-bottom-nav") + "'>" +
-          "<section class='about-story-hero " + (isLanding ? "landing-hero" : "") + "'>" + (isLanding ? languagePicker("landing-language") : "") + "<span class='about-story-kicker'>✨ " + esc(i18n("NOTRE HISTOIRE", "OUR STORY")) + "</span><h1>" + esc(i18n("Une sortie, des gens qui ont envie d’y aller aussi.", "One event, people who want to go too.")) + "</h1><p>" + esc(i18n("Never Go Alone s’adresse aux personnes qui ont envie de sortir, de rencontrer du monde et de partager un événement sans y aller seules.", "Never Go Alone is for people who want to go out, meet others and share an event without going alone.")) + "</p><span class='scroll-hint'>↓ " + esc(i18n("Fais défiler", "Keep scrolling")) + "</span></section>" +
+          "<section class='about-story-hero " + (isLanding ? "landing-hero" : "") + "'><span class='about-story-kicker'>✨ " + esc(i18n("NOTRE HISTOIRE", "OUR STORY")) + "</span><h1>" + esc(i18n("Une sortie, des gens qui ont envie d’y aller aussi.", "One event, people who want to go too.")) + "</h1><p>" + esc(i18n("Never Go Alone s’adresse aux personnes qui ont envie de sortir, de rencontrer du monde et de partager un événement sans y aller seules.", "Never Go Alone is for people who want to go out, meet others and share an event without going alone.")) + "</p><span class='scroll-hint'>↓ " + esc(i18n("Fais défiler", "Keep scrolling")) + "</span></section>" +
           chapters.map(function (chapter) {
             return "<article class='about-chapter' data-reveal data-tone='" + esc(chapter.tone) + "'><span class='about-number' aria-hidden='true'>" + esc(chapter.emoji) + "</span><h2>" + esc(chapter.title) + "</h2><p>" + esc(chapter.text) + "</p><span class='about-orb' aria-hidden='true'></span></article>";
           }).join("") +
@@ -2576,6 +2784,9 @@
           event: eventDetail,
           people: peoplePreview,
           "member-profile": memberProfile,
+          situation: situationPage,
+          offer: offerPage,
+          "offer-thanks": offerThanksPage,
           join: joinPage,
           contact: contactPage,
           profile: profile,
@@ -2637,14 +2848,10 @@
           state.agePreference = ["all", "18-23", "24-26", "27-30"].indexOf(selectedAgePreference) >= 0 ? selectedAgePreference : "all";
           render();
         }
-        if (action === "join") navigate("join");
+        if (action === "join") startGroupSurvey();
         if (action === "withdraw" && window.confirm(i18n("Retirer ton intérêt de ce groupe ? Ton profil ne sera plus visible aux autres personnes intéressées.", "Remove your interest from this group? Your profile will no longer be visible to the other interested people."))) withdrawLiveInterest();
         if (action === "about") navigate("about");
         if (action === "toggle-dark") { state.dark = !state.dark; render(); }
-        if (action === "set-locale") {
-          state.locale = control.dataset.locale === "en" ? "en" : "fr";
-          render();
-        }
       });
 
       app.addEventListener("input", function (event) {
@@ -2688,6 +2895,14 @@
         if (event.target && event.target.id === "live-interest-form") {
           event.preventDefault();
           submitLiveInterest();
+        }
+        if (event.target && event.target.id === "survey-situation-form") {
+          event.preventDefault();
+          submitSurveySituation();
+        }
+        if (event.target && event.target.id === "survey-offer-form") {
+          event.preventDefault();
+          submitSurveyOffer();
         }
       });
 
@@ -2733,9 +2948,52 @@
         if (feedback) feedback.textContent = message || "";
       }
 
+      async function submitSurveySituation() {
+        var situation = joinCheckedValue("survey-situation");
+        var survey = activeSurvey();
+        if (!survey || !situation) {
+          surveyFeedback("Choisis la réponse qui te correspond le mieux pour continuer.");
+          return;
+        }
+        survey.situation = situation;
+        surveyFeedback("Enregistrement de ta réponse anonyme…");
+        try {
+          await saveSurveyStage("situation");
+          state.surveyStatus = "";
+          navigate("offer");
+        } catch (error) {
+          surveyFeedback(error && error.message ? error.message : "Impossible d’enregistrer cette réponse pour le moment.");
+        }
+      }
+
+      async function submitSurveyOffer() {
+        var offerUseful = joinCheckedValue("survey-offer-useful");
+        var survey = activeSurvey();
+        if (!survey || !survey.situation || !offerUseful) {
+          surveyFeedback("Choisis une réponse pour continuer.");
+          return;
+        }
+        survey.offerUseful = offerUseful;
+        surveyFeedback("Enregistrement de ta réponse anonyme…");
+        try {
+          await saveSurveyStage("offer");
+          state.surveyStatus = "";
+          if (offerUseful === "yes") navigate("join");
+          else {
+            survey.completed = true;
+            state.history = [];
+            state.screen = "offer-thanks";
+            render();
+          }
+        } catch (error) {
+          surveyFeedback(error && error.message ? error.message : "Impossible d’enregistrer cette réponse pour le moment.");
+        }
+      }
+
       async function submitLiveInterest() {
         var form = app.querySelector("#live-interest-form");
         if (!form || state.joinStatus === "sending") return;
+        var survey = activeSurvey();
         var firstName = joinFieldValue("live-first-name");
         var lastName = joinFieldValue("live-last-name");
         var email = joinFieldValue("live-email").toLowerCase();
@@ -2745,10 +3003,8 @@
         var description = joinFieldValue("live-description");
         var passions = joinFieldValue("live-passions");
         var gender = joinFieldValue("live-gender") || "unspecified";
-        var launchInterest = joinCheckedValue("live-launch-interest");
-        var launchFeedback = joinFieldValue("live-launch-feedback");
-        var launchChat = joinCheckedValue("live-launch-chat");
         var subscriptionPreference = joinCheckedValue("live-subscription-preference");
+        var acceptableServiceFee = joinCheckedValue("live-acceptable-service-fee");
         var subscriptionFeedback = joinFieldValue("live-subscription-feedback");
         var website = joinFieldValue("live-website");
         var adult = !!(app.querySelector("#live-adult") || {}).checked;
@@ -2757,24 +3013,33 @@
         var emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
         if (!firstName || !lastName || !activity || !emailLooksValid || !Number.isInteger(age) || age < 18 || age > 30 || !nationality) {
-          setJoinFeedback(i18n("Renseigne ton prénom, ton nom, ton e-mail, ton âge (18–30 ans), ta nationalité et ton activité.", "Enter your first name, last name, email, age (18–30), nationality and activity."));
+          setJoinFeedback("Renseigne ton prénom, ton nom, ton e-mail, ton âge (18–30 ans), ta nationalité et ton activité.");
           return;
         }
-        if (!launchInterest || !launchFeedback || !launchChat || !subscriptionPreference) {
-          setJoinFeedback(i18n("Réponds aux questions sur le lancement et choisis la formule qui te conviendrait le mieux.", "Answer the launch questions and choose the plan that would suit you best."));
+        if (!survey || survey.offerUseful !== "yes" || !survey.situation) {
+          setJoinFeedback("Reprends le parcours depuis la première étape avant d’ajouter ton profil.");
           return;
         }
-        if (!adult || !publicConsent || !contactConsent) {
-          setJoinFeedback(i18n("Confirme les trois cases pour envoyer ton formulaire.", "Confirm all three checkboxes to send your form."));
+        if (!subscriptionPreference || !acceptableServiceFee) {
+          setJoinFeedback("Choisis une formule et le niveau de frais de service qui te semblerait acceptable.");
+          return;
+        }
+        if (!adult || !publicConsent) {
+          setJoinFeedback("Confirme les deux cases requises pour envoyer ton formulaire.");
           return;
         }
 
         state.joinStatus = "sending";
-        setJoinFeedback(i18n("Envoi du formulaire et ajout de ton profil…", "Sending your form and adding your profile…"));
+        setJoinFeedback("Enregistrement du sondage et ajout de ton profil…");
         var submitButton = form.querySelector("button[type='submit']");
         if (submitButton) submitButton.disabled = true;
         var event = selectedEvent();
         try {
+          await saveSurveyStage("pricing", {
+            subscriptionPreference: subscriptionPreference,
+            acceptableServiceFee: acceptableServiceFee,
+            subscriptionFeedback: subscriptionFeedback
+          });
           var payload = await apiRequest("/api/interests", {
             method: "POST",
             headers: { "content-type": "application/json", "accept": "application/json" },
@@ -2789,11 +3054,6 @@
               activity: activity,
               description: description,
               passions: passions,
-              launchInterest: launchInterest,
-              launchFeedback: launchFeedback,
-              launchChat: launchChat,
-              subscriptionPreference: subscriptionPreference,
-              subscriptionFeedback: subscriptionFeedback,
               adult: adult,
               publicConsent: publicConsent,
               contactConsent: contactConsent,
@@ -2810,13 +3070,14 @@
           });
           state.profileDraft = Object.assign({}, state.personalProfile);
           persistPersonalProfile();
+          survey.completed = true;
           state.joinStatus = "";
           state.history = [];
           state.screen = "contact";
           render();
         } catch (error) {
           state.joinStatus = "";
-          setJoinFeedback(error && error.message ? error.message : i18n("Impossible d’envoyer le formulaire pour le moment.", "We could not send your form right now."));
+          setJoinFeedback(error && error.message ? error.message : "Impossible d’envoyer le formulaire pour le moment.");
           if (submitButton) submitButton.disabled = false;
         }
       }
