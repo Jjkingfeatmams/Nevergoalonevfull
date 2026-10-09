@@ -1,40 +1,69 @@
-# Publier la V5 abonnement sur Netlify
+# Publier le prototype Never Go Alone sur Netlify
 
-Cette V5 conserve les profils intéressés live et ajoute un test d'abonnement
-natif : après avoir ajouté son profil pour une sortie, la personne indique si
-elle préférerait 2,99 € par mois, 7,99 € par trimestre, un paiement par
-événement ou aucun abonnement. Il n'y a ni carte bancaire ni paiement réel.
+Cette version garde les profils de groupes en direct avec Netlify Blobs et
+ajoute un sondage tarifaire **anonyme**, distinct des profils de groupe.
+Les événements, tarifs et données affichés sont fictifs et servent uniquement
+au prototype.
 
 ## Publication
 
-1. Créer un **nouveau projet Netlify** depuis le même dépôt Git (ne pas
-   déposer seulement `index.html`, car les Functions ne seraient pas
-   publiées). Ainsi, la version existante reste en ligne.
-2. Dans la configuration du nouveau projet, choisir `v5-abonnement` comme
-   **Base directory**. Netlify utilisera alors `v5-abonnement/netlify.toml`, la commande
-   `npm run build` et le dossier publié `dist`.
-   Le `netlify.toml` situé à la racine du dépôt reste volontairement réglé
-   sur une version antérieure ; ne pas modifier le projet existant si
-   l'objectif est de conserver les deux liens.
-3. Déclencher le déploiement. La commande est `npm run build` et le dossier
-   publié est `dist`.
-4. Dans **Site configuration → Environment variables**, ajouter de préférence
-   `INTEREST_HASH_SECRET` avec une longue valeur aléatoire privée. Ne pas
-   modifier cette valeur après les premières inscriptions, car elle protège
-   les liens de retrait des profils.
+1. Crée un projet Netlify depuis ce dossier Git complet. Ne publie pas
+   seulement `index.html` : les Functions doivent être incluses.
+2. Laisse le **Base directory** vide si ce dossier est à la racine du dépôt.
+   Netlify utilisera `netlify.toml`, exécutera `npm run build` et publiera
+   `dist`.
+3. Déclenche le déploiement. Le dossier `dist` est généré par la build et ne
+   doit pas être ajouté à Git.
+4. Ajoute dans **Site configuration → Environment variables** une valeur
+   longue et privée pour `INTEREST_HASH_SECRET`. Ne la modifie plus après les
+   premières inscriptions, car elle protège les liens de retrait de profil.
 
-Les routes `/api/*` sont traitées par `netlify/functions/live-interest.mjs`.
-Elles enregistrent seulement le prénom, l'âge, la nationalité, l'activité,
-la courte description, les passions et un avatar illustré qui peuvent être
-affichés publiquement.
-Le genre choisi peut aussi être affiché publiquement après consentement.
-L'e-mail et le nom ne sont pas conservés dans le stockage partagé.
+## Données et confidentialité
 
-La préférence d'abonnement et le commentaire facultatif sont enregistrés dans
-le même dossier de profil mais restent **privés** : ils ne sont jamais renvoyés
-par les routes qui affichent les membres du groupe. Pour que ce test fonctionne,
-publier impérativement le dossier complet, y compris `netlify/functions/` ;
-publier uniquement `dist/` ne suffit pas.
+Le parcours tarifaire enregistre, avec un identifiant de session aléatoire :
 
-Pour protéger l'accès au prototype, activer la protection du site dans les
-réglages Netlify plutôt que de mettre un mot de passe dans le code source.
+- la situation initiale ;
+- l’indicateur interne `cible`, dérivé côté serveur ;
+- l’intérêt pour l’offre ;
+- la formule choisie ;
+- le niveau de frais de service acceptable ;
+- le commentaire facultatif.
+
+Ce sondage ne comporte ni nom, ni e-mail, ni identifiant de profil, ni donnée
+personnelle. Il est stocké séparément sous `survey/` et n’est jamais lu par les
+routes publiques qui affichent les groupes.
+
+Les profils de groupe sont enregistrés séparément sous `interest/`. Seuls le
+prénom, l’âge, la nationalité, le genre renseigné, l’activité, la description,
+les passions et un avatar illustré peuvent apparaître publiquement après le
+consentement requis. Le nom et l’e-mail ne sont pas stockés dans les profils
+partagés.
+
+Aucune donnée personnelle n’est transmise aux organisateurs. Les éventuels
+éléments partagés avec eux doivent rester des statistiques agrégées et
+anonymisées — intérêt par sortie, préférences de formule ou volume potentiel
+de participants — sans nom, e-mail ou profil individuel.
+
+## Rapport anonyme interne
+
+Pour consulter uniquement les statistiques agrégées, ajoute également une
+variable d’environnement privée `SURVEY_REPORT_TOKEN`. Puis appelle :
+
+```text
+GET /api/internal/survey-summary
+x-survey-report-token: <la valeur de SURVEY_REPORT_TOKEN>
+```
+
+La réponse répartit les résultats entre `cible` et `non-cible`, sans jamais
+renvoyer les réponses brutes ni les commentaires.
+
+## Contact facultatif
+
+Le profil peut proposer une inscription facultative aux nouvelles de Never Go
+Alone. Cette demande est séparée du sondage tarifaire. Si le projet conserve
+un Google Form pour ce contact, configure au besoin
+`GOOGLE_FORM_RESPONSE_URL`; aucune réponse du sondage tarifaire ne doit lui
+être envoyée.
+
+Pour protéger l’accès au prototype, active la protection de site dans les
+réglages Netlify plutôt que de placer un mot de passe dans le code source.
