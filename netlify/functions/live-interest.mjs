@@ -21,11 +21,6 @@ const SITUATION_TARGETS = new Map([
 ]);
 const OFFER_USEFUL_RESPONSES = new Set(["yes", "no"]);
 const SUBSCRIPTION_PREFERENCES = new Set(["monthly", "quarterly", "per-event", "no"]);
-const ACCEPTABLE_SERVICE_FEES = new Map([
-  ["1.50", 150],
-  ["2", 200],
-  ["3", 300]
-]);
 const SURVEY_STAGES = new Set(["situation", "offer", "pricing"]);
 const SURVEY_PAYLOAD_KEYS = new Set([
   "sessionId",
@@ -34,7 +29,6 @@ const SURVEY_PAYLOAD_KEYS = new Set([
   "situation",
   "offerUseful",
   "subscriptionPreference",
-  "acceptableServiceFee",
   "subscriptionFeedback"
 ]);
 const submissionWindows = new Map();
@@ -250,7 +244,6 @@ function validSurveyRecord(record) {
     typeof record.cible === "boolean" &&
     (record.offerUseful === null || OFFER_USEFUL_RESPONSES.has(record.offerUseful)) &&
     (record.subscriptionPreference === null || SUBSCRIPTION_PREFERENCES.has(record.subscriptionPreference)) &&
-    (record.acceptableServiceFeeCents === null || [150, 200, 300].includes(record.acceptableServiceFeeCents)) &&
     typeof record.subscriptionFeedback === "string" &&
     typeof record.createdAt === "string" &&
     typeof record.updatedAt === "string";
@@ -326,7 +319,6 @@ async function saveSurveySession(request) {
   const cible = SITUATION_TARGETS.get(situation);
   let offerUseful = null;
   let subscriptionPreference = null;
-  let acceptableServiceFeeCents = null;
   let subscriptionFeedback = "";
 
   if (stage === "offer" || stage === "pricing") {
@@ -338,8 +330,6 @@ async function saveSurveySession(request) {
       throw new HttpError(400, "La formule tarifaire ne peut être évaluée qu’après un oui à l’offre.");
     }
     subscriptionPreference = surveyChoice(payload.subscriptionPreference, SUBSCRIPTION_PREFERENCES, "Préférence d’abonnement");
-    const feeLevel = surveyChoice(payload.acceptableServiceFee, ACCEPTABLE_SERVICE_FEES, "Niveau de frais de service");
-    acceptableServiceFeeCents = ACCEPTABLE_SERVICE_FEES.get(feeLevel);
     subscriptionFeedback = cleanOptionalPublicText(
       payload.subscriptionFeedback,
       MAX_SUBSCRIPTION_FEEDBACK_LENGTH,
@@ -364,7 +354,6 @@ async function saveSurveySession(request) {
     cible,
     offerUseful,
     subscriptionPreference,
-    acceptableServiceFeeCents,
     subscriptionFeedback,
     progress: stage === "pricing" ? "completed" : offerUseful === "no" ? "declined" : stage,
     createdAt: validSurveyRecord(existing) ? existing.createdAt : now,
@@ -382,8 +371,7 @@ function emptySurveySegment() {
   return {
     sessions: 0,
     offerUseful: { yes: 0, no: 0, pending: 0 },
-    subscriptionPreference: { monthly: 0, quarterly: 0, "per-event": 0, no: 0, pending: 0 },
-    acceptableServiceFee: { "1.50 €": 0, "2 €": 0, "3 €": 0, pending: 0 }
+    subscriptionPreference: { monthly: 0, quarterly: 0, "per-event": 0, no: 0, pending: 0 }
   };
 }
 
@@ -397,12 +385,6 @@ function addSurveyToSegment(segment, record) {
   } else {
     segment.subscriptionPreference.pending += 1;
   }
-
-  const feeLabel = record.acceptableServiceFeeCents === 150 ? "1.50 €" :
-    record.acceptableServiceFeeCents === 200 ? "2 €" :
-      record.acceptableServiceFeeCents === 300 ? "3 €" : "";
-  if (feeLabel) segment.acceptableServiceFee[feeLabel] += 1;
-  else segment.acceptableServiceFee.pending += 1;
 }
 
 async function surveySummary(request) {

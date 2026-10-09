@@ -26,7 +26,6 @@ Le parcours tarifaire enregistre, avec un identifiant de session aléatoire :
 - l’indicateur interne `cible`, dérivé côté serveur ;
 - l’intérêt pour l’offre ;
 - la formule choisie ;
-- le niveau de frais de service acceptable ;
 - le commentaire facultatif.
 
 Ce sondage ne comporte ni nom, ni e-mail, ni identifiant de profil, ni donnée
@@ -38,6 +37,11 @@ prénom, l’âge, la nationalité, le genre renseigné, l’activité, la descr
 les passions et un avatar illustré peuvent apparaître publiquement après le
 consentement requis. Le nom et l’e-mail ne sont pas stockés dans les profils
 partagés.
+
+Le profil est rempli une seule fois au début de la visite puis réutilisé lors
+de l’ajout à un groupe. Il reste uniquement en mémoire dans le navigateur pour
+cette visite : il n’est ni enregistré dans l’URL ni partagé avec une personne
+qui ouvre le même lien dans une nouvelle session.
 
 Aucune donnée personnelle n’est transmise aux organisateurs. Les éventuels
 éléments partagés avec eux doivent rester des statistiques agrégées et

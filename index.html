@@ -1006,15 +1006,19 @@
       background: color-mix(in srgb, var(--coral) 9%, var(--card));
     }
     .pricing-simulation h3 { margin: 0 0 2px; font-size: 14px; }
-    .pricing-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .pricing-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; color: var(--muted); font-size: 11px; line-height: 1.35; }
     .pricing-row span { min-width: 0; }
-    .pricing-row b { color: var(--ink); font-size: 12px; white-space: nowrap; }
+    .pricing-row b { padding: 4px 6px; border-radius: 8px; color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, var(--card)); font-size: 12px; white-space: nowrap; }
+    .pricing-row.full-price b { color: #fff4f2; background: var(--coral); }
+    .pricing-row.per-event-price b { color: #342300; background: var(--gold); }
     .pricing-row.highlight { margin: 2px -2px; padding: 9px; border-radius: 10px; background: color-mix(in srgb, var(--green) 16%, var(--card)); color: var(--green); }
-    .pricing-row.highlight b { color: var(--green); }
+    .pricing-row.highlight b { color: #0b3928; background: #a9e4c8; }
     .pricing-simulation p { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
     .privacy-card { margin: 14px 0; padding: 12px; border: 1px solid color-mix(in srgb, var(--green) 42%, var(--line)); border-radius: 14px; background: var(--green-soft); color: var(--green); }
     .privacy-card b { display: block; margin-bottom: 4px; font-size: 12px; }
     .privacy-card p { margin: 0; font-size: 11px; line-height: 1.42; }
+    .profile-summary-card { border-color: color-mix(in srgb, var(--green) 52%, var(--line)); }
+    .profile-summary-line { margin: 12px 0 9px !important; color: var(--ink) !important; font-size: 15px !important; font-weight: 900; line-height: 1.42 !important; }
 
     .live-banner {
       display: flex;
@@ -1228,6 +1232,65 @@
         var(--paper);
     }
     body.dark .welcome-step { border-color: #554a60; background: #342d37; }
+
+    /* Lecture facilitée : le prototype reste dense, mais les éléments utiles
+       sur un téléphone sont désormais nettement plus lisibles. */
+    .screen-header strong { font-size: 15px; }
+    .home-button, .chip, .bottom-nav button { font-size: 12px; }
+    .eyebrow, .welcome-kicker, .discover-eyebrow, .journey-progress { font-size: 11px; }
+    h1 { font-size: 30px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 18px; }
+    .muted { font-size: 15px; }
+    .tiny { font-size: 12px; }
+    .location-bar, .location-bar button { font-size: 14px; }
+    .event-match, .event-meta, .live-note { font-size: 12px; }
+    .event-copy p { font-size: 13px; }
+    .price-line { gap: 8px; margin: 3px 0 7px; }
+    .price-line b {
+      padding: 5px 8px;
+      border-radius: 9px;
+      background: var(--gold);
+      color: #342300;
+      font-size: 17px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .price-line s { font-size: 13px; }
+    .fictitious-price-badge {
+      display: inline-flex;
+      margin-top: 1px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--coral) 18%, var(--card));
+      color: var(--coral);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .03em;
+    }
+    .price-info-card { border: 1px solid color-mix(in srgb, var(--gold) 52%, var(--line)); background: color-mix(in srgb, var(--gold) 9%, var(--card)); }
+    .price-info-card > b { color: var(--gold); font-size: 15px; }
+    .info-card p, .notice-card p, .profile-card p, .private-lock p { font-size: 13px; }
+    .field label { font-size: 13px; }
+    .field input, .field select, .field textarea { font-size: 16px; }
+    .check, .feedback { font-size: 13px; }
+    .subscription-test h2 { font-size: 19px; }
+    .subscription-test-head p, .subscription-saving { font-size: 13px; }
+    .subscription-price b { font-size: 29px; }
+    .subscription-price span { font-size: 12px; }
+    .subscription-option { font-size: 13px; }
+    .subscription-option b { font-size: 14px; }
+    .subscription-option small, .subscription-disclaimer { font-size: 12px; }
+    .survey-card > p, .survey-option { font-size: 14px; }
+    .survey-question { font-size: 17px; }
+    .survey-privacy-note { font-size: 12px; }
+    .pricing-simulation h3 { font-size: 17px; }
+    .pricing-row { font-size: 13px; }
+    .pricing-row b { font-size: 16px; }
+    .pricing-simulation p, .privacy-card p { font-size: 12px; }
+    .privacy-card b { font-size: 14px; }
+    .live-banner, .live-count, .live-member-copy { font-size: 13px; }
+    .language-picker > span, .language-picker button { font-size: 13px; }
 
     @media (max-width: 900px) {
       .stage { grid-template-columns: 1fr; padding: 0; justify-items: center; }
@@ -1591,8 +1654,20 @@
           firstName: cleanPersonalText(source.firstName, 30),
           lastName: cleanPersonalText(source.lastName, 50),
           age: Number.isInteger(age) && age >= 18 && age <= 30 ? age : "",
-          gender: gender
+          gender: gender,
+          email: cleanPersonalText(source.email, 254).toLowerCase(),
+          nationality: cleanPersonalText(source.nationality, 70),
+          activity: cleanPersonalText(source.activity, 80),
+          description: cleanPersonalText(source.description, 320),
+          passions: cleanPersonalText(source.passions, 180)
         };
+      }
+
+      function personalProfileReady(value) {
+        var profileData = normalisePersonalProfile(value);
+        return !!profileData.firstName && !!profileData.lastName && !!profileData.age &&
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileData.email) &&
+          !!profileData.nationality && !!profileData.activity;
       }
 
       function storedPersonalProfile() {
@@ -1881,11 +1956,12 @@
       }
 
       function applyLocale() {
-        document.documentElement.lang = "fr";
+        var english = state.locale === "en";
+        document.documentElement.lang = english ? "en" : "fr";
         document.title = "Never Go Alone";
-        introLead.textContent = "Des événements et des personnes à rencontrer.";
-        sideNote.textContent = "Prototype interactif — les événements, tarifs et données sont fictifs.";
-        phone.setAttribute("aria-label", "Prototype mobile Never Go Alone");
+        introLead.textContent = i18n("Des événements et des personnes à rencontrer.", "Events and people to discover.");
+        sideNote.textContent = i18n("Prototype interactif — les événements, tarifs et données sont fictifs.", "Interactive prototype — events, prices and data are fictional.");
+        phone.setAttribute("aria-label", i18n("Prototype mobile Never Go Alone", "Never Go Alone mobile prototype"));
       }
 
       function esc(value) {
@@ -1895,7 +1971,7 @@
       }
 
       function i18n(french, english) {
-        return french;
+        return state.locale === "en" && english ? english : french;
       }
 
       function profileGenderLabel(value) {
@@ -2087,7 +2163,7 @@
       }
 
       function interestLabel(option) {
-        return option.fr;
+        return state.locale === "en" ? option.en : option.fr;
       }
 
       function eventInterestMatches(event) {
@@ -2130,7 +2206,7 @@
 
       function eventDate(event) {
         var currentEvent = event || selectedEvent();
-        return currentEvent.date;
+        return state.locale === "en" && currentEvent.dateEn ? currentEvent.dateEn : currentEvent.date;
       }
 
       function eventVenue(event) {
@@ -2145,7 +2221,10 @@
       }
 
       function upcomingEventsNote(count) {
-        return count + " sorties fictives à découvrir · tarifs et groupes simulés pour le prototype.";
+        return i18n(
+          count + " sorties fictives à découvrir · tarifs et groupes simulés pour le prototype.",
+          count + " fictional events to discover · prices and groups are simulated for this prototype."
+        );
       }
 
       function navigate(screen) {
@@ -2267,7 +2346,7 @@
       }
 
       function poster(event, extraClass) {
-        var posterAlt = "Affiche de " + event.title;
+        var posterAlt = i18n("Affiche de " + event.title, "Poster for " + event.title);
         var imageLoading = extraClass ? "eager" : "lazy";
         var artwork = event.secondaryImageUrl ? "<div class='matchup-artwork' aria-hidden='true'><img src='" + esc(event.imageUrl) + "' alt='' loading='" + imageLoading + "' decoding='async' referrerpolicy='no-referrer'><span>VS</span><img src='" + esc(event.secondaryImageUrl) + "' alt='' loading='" + imageLoading + "' decoding='async' referrerpolicy='no-referrer'></div>" :
           event.imageUrl ? "<img class='event-artwork " + (event.imageFit === "contain" ? "contain" : "") + "' src='" + esc(event.imageUrl) + "' alt='" + esc(posterAlt) + "' loading='" + imageLoading + "' decoding='async' referrerpolicy='no-referrer' onerror='this.hidden=true'>" : "";
@@ -2279,7 +2358,10 @@
         var count = liveCount(event);
         var percentage = Math.min(100, Math.round((count / event.minimum) * 100));
         var countLabel = count ? i18n(count + " intérêt" + (count > 1 ? "s" : "") + " en direct", count + " live interest" + (count > 1 ? "s" : "")) : i18n("Premier intérêt attendu", "Be the first to join");
-        var groupLabel = count ? count + " personne" + (count > 1 ? "s" : "") + " intéressée" + (count > 1 ? "s" : "") : "Groupe à créer";
+        var groupLabel = count ? i18n(
+          count + " personne" + (count > 1 ? "s" : "") + " intéressée" + (count > 1 ? "s" : ""),
+          count + " interested person" + (count > 1 ? "s" : "")
+        ) : i18n("Groupe à créer", "Group to create");
         var dots = count ? "● ".repeat(Math.min(3, count)).trim() : "○ ○ ○";
         return "<button type='button' class='event-card' data-action='open-event' data-event-id='" + index + "'>" +
           poster(event) +
@@ -2287,6 +2369,7 @@
           "<p>" + esc(eventDate(event)) + " · " + esc(eventVenue(event)) + "</p>" +
           "<div class='price-line'><b>" + esc(formatEuro(tarifGroupe(event))) + "</b><s>" + esc(formatEuro(event.publicPrice)) + "</s>" +
           "<span class='tiny'>−" + Math.round(TARIFICATION.REMISE_GROUPE * 100) + " %</span></div>" +
+          "<span class='fictitious-price-badge'>" + esc(i18n("Prix fictif · simulation", "Fictional price · simulation")) + "</span>" +
           "<div class='progress'><span style='width:" + percentage + "%'></span></div>" +
           "<div class='event-meta'><span>" + esc(groupLabel) + "</span>" +
           "<span class='member-dots' aria-label='" + esc(countLabel) + "'>" + dots + "</span></div>" +
@@ -2318,23 +2401,35 @@
           "</div></div>" + bottomNav("explore") + "</section>";
       }
 
+      function languagePicker(extraClass) {
+        return "<div class='language-picker " + esc(extraClass || "") + "' aria-label='" + esc(i18n("Choisir la langue", "Choose language")) + "'><span>" + esc(i18n("Langue", "Language")) + "</span>" +
+          "<button type='button' data-action='set-locale' data-locale='fr' aria-pressed='" + (state.locale === "fr") + "' class='" + (state.locale === "fr" ? "active" : "") + "'>Français</button>" +
+          "<button type='button' data-action='set-locale' data-locale='en' aria-pressed='" + (state.locale === "en") + "' class='" + (state.locale === "en" ? "active" : "") + "'>English</button></div>";
+      }
+
       function welcome() {
         var draft = state.profileDraft || normalisePersonalProfile({});
         var selectedCount = state.interests.length;
         var selectedGender = ["woman", "man", "unspecified"].indexOf(draft.gender) >= 0 ? draft.gender : "unspecified";
         var interestChoices = interestOptions.map(function (option) {
           var selected = state.interests.indexOf(option.id) >= 0;
-          return "<button type='button' class='interest-choice " + (selected ? "selected" : "") + "' data-action='toggle-interest' data-interest-id='" + esc(option.id) + "' aria-pressed='" + selected + "'><span class='interest-icon' aria-hidden='true'>" + esc(option.icon) + "</span><span><b>" + esc(interestLabel(option)) + "</b><small>" + esc(option.detailFr) + "</small></span></button>";
+          var interestDetail = state.locale === "en" ? option.detailEn : option.detailFr;
+          return "<button type='button' class='interest-choice " + (selected ? "selected" : "") + "' data-action='toggle-interest' data-interest-id='" + esc(option.id) + "' aria-pressed='" + selected + "'><span class='interest-icon' aria-hidden='true'>" + esc(option.icon) + "</span><span><b>" + esc(interestLabel(option)) + "</b><small>" + esc(interestDetail) + "</small></span></button>";
         }).join("");
-        return "<section class='view welcome-screen'>" + header(i18n("Ton profil", "Your profile")) + "<div class='scroll welcome-scroll'>" +
+        return "<section class='view welcome-screen'>" + header(i18n("Ton profil", "Your profile")) + "<div class='scroll welcome-scroll'>" + languagePicker("welcome-language") +
           "<span class='welcome-kicker'>🧭 " + esc(i18n("NEVER GO ALONE · PROTOTYPE LIVE", "NEVER GO ALONE · LIVE PROTOTYPE")) + "</span>" +
-          "<h1>" + esc(i18n("Avant de sortir, parlons un peu de toi.", "Before going out, let’s get to know you.")) + "</h1>" +
-          "<p class='welcome-lead'>" + esc(i18n("Ces informations personnalisent cette visite uniquement. Elles ne sont ni ajoutées au lien, ni enregistrées dans ton navigateur, et ne deviennent visibles dans un groupe qu’après une participation finalisée.", "These details personalise this visit only. They are neither added to the link nor stored in your browser, and only become visible in a group after participation is completed.")) + "</p>" +
-          "<form id='onboarding-form' novalidate autocomplete='off'><section class='onboarding-profile' aria-label='" + esc(i18n("Tes informations", "Your details")) + "'><div class='onboarding-profile-head'><span class='onboarding-profile-icon' aria-hidden='true'>👋</span><div><h2>" + esc(i18n("On commence par toi.", "Let’s start with you.")) + "</h2><p>" + esc(i18n("Prénom, nom et âge sont nécessaires pour créer ton profil. Le sexe est facultatif.", "First name, last name and age are needed to create your profile. Sex is optional.")) + "</p></div></div>" +
+          "<h1>" + esc(i18n("Crée ton profil une seule fois.", "Create your profile once.")) + "</h1>" +
+          "<p class='welcome-lead'>" + esc(i18n("Ces informations personnalisent cette visite et seront reprises automatiquement si tu rejoins un groupe. Elles ne sont ni ajoutées au lien ni enregistrées dans ton navigateur.", "These details personalise this visit and will be reused automatically if you join a group. They are not added to the link or stored in your browser.")) + "</p>" +
+          "<form id='onboarding-form' novalidate autocomplete='off'><section class='onboarding-profile' aria-label='" + esc(i18n("Tes informations", "Your details")) + "'><div class='onboarding-profile-head'><span class='onboarding-profile-icon' aria-hidden='true'>👋</span><div><h2>" + esc(i18n("On commence par toi.", "Let’s start with you.")) + "</h2><p>" + esc(i18n("Tu ne rempliras pas ces informations une seconde fois pour rejoindre un groupe. Ton e-mail reste privé.", "You will not have to fill in these details again when you join a group. Your email stays private.")) + "</p></div></div>" +
           "<div class='two-columns'><div class='field'><label for='onboarding-first-name'>" + esc(i18n("Prénom", "First name")) + "</label><input id='onboarding-first-name' name='firstName' maxlength='30' autocomplete='off' value='" + esc(draft.firstName || "") + "' required></div>" +
           "<div class='field'><label for='onboarding-last-name'>" + esc(i18n("Nom", "Last name")) + "</label><input id='onboarding-last-name' name='lastName' maxlength='50' autocomplete='off' value='" + esc(draft.lastName || "") + "' required></div></div>" +
+          "<div class='field'><label for='onboarding-email'>" + esc(i18n("E-mail (privé)", "Email (private)")) + "</label><input id='onboarding-email' name='email' type='email' maxlength='254' autocomplete='email' inputmode='email' value='" + esc(draft.email || "") + "' required></div>" +
           "<div class='two-columns'><div class='field'><label for='onboarding-age'>" + esc(i18n("Âge", "Age")) + "</label><input id='onboarding-age' name='age' type='number' min='18' max='30' step='1' inputmode='numeric' autocomplete='off' value='" + esc(draft.age === "" ? "" : draft.age) + "' placeholder='24' required></div>" +
-          "<div class='field'><label for='onboarding-gender'>" + esc(i18n("Sexe (facultatif)", "Sex (optional)")) + "</label><select id='onboarding-gender' name='gender'><option value='unspecified'" + (selectedGender === "unspecified" ? " selected" : "") + ">" + esc(i18n("Je préfère ne pas préciser", "Prefer not to say")) + "</option><option value='woman'" + (selectedGender === "woman" ? " selected" : "") + ">" + esc(i18n("Femme", "Woman")) + "</option><option value='man'" + (selectedGender === "man" ? " selected" : "") + ">" + esc(i18n("Homme", "Man")) + "</option></select></div></div></section>" +
+          "<div class='field'><label for='onboarding-nationality'>" + esc(i18n("Nationalité", "Nationality")) + "</label><input id='onboarding-nationality' name='nationality' maxlength='70' autocomplete='off' value='" + esc(draft.nationality || "") + "' placeholder='" + esc(i18n("Ex. française, ivoirienne", "E.g. French, Ivorian")) + "' required></div></div>" +
+          "<div class='field'><label for='onboarding-activity'>" + esc(i18n("Activité", "Occupation")) + "</label><input id='onboarding-activity' name='activity' maxlength='80' autocomplete='organization-title' value='" + esc(draft.activity || "") + "' placeholder='" + esc(i18n("Ex. master finance", "E.g. finance master’s student")) + "' required></div>" +
+          "<div class='field'><label for='onboarding-gender'>" + esc(i18n("Sexe (facultatif)", "Sex (optional)")) + "</label><select id='onboarding-gender' name='gender'><option value='unspecified'" + (selectedGender === "unspecified" ? " selected" : "") + ">" + esc(i18n("Je préfère ne pas préciser", "Prefer not to say")) + "</option><option value='woman'" + (selectedGender === "woman" ? " selected" : "") + ">" + esc(i18n("Femme", "Woman")) + "</option><option value='man'" + (selectedGender === "man" ? " selected" : "") + ">" + esc(i18n("Homme", "Man")) + "</option></select></div>" +
+          "<div class='field'><label for='onboarding-description'>" + esc(i18n("Décris-toi en quelques mots (facultatif)", "Tell us about yourself (optional)")) + "</label><textarea id='onboarding-description' name='description' maxlength='320' placeholder='" + esc(i18n("Ex. toujours partant·e pour découvrir des sorties et rencontrer du monde.", "E.g. always up for discovering events and meeting people.")) + "'>" + esc(draft.description || "") + "</textarea></div>" +
+          "<div class='field'><label for='onboarding-passions'>" + esc(i18n("Tes passions (facultatif)", "Your interests (optional)")) + "</label><input id='onboarding-passions' name='passions' maxlength='180' autocomplete='off' value='" + esc(draft.passions || "") + "' placeholder='" + esc(i18n("Ex. basket, cinéma, cuisine, voyages", "E.g. basketball, cinema, cooking, travel")) + "'></div><p class='tiny'>🪪 " + esc(i18n("Au lancement, les profils seront vérifiés avec une pièce d’identité. Ce prototype ne demande aucun document.", "At launch, profiles will be verified with government-issued ID. This prototype asks for no document.")) + "</p></section>" +
           "<section class='interest-picker' aria-label='" + esc(i18n("Tes centres d’intérêt", "Your interests")) + "'><div class='interest-picker-head'><div><h2>" + esc(i18n("Tes envies", "Your interests")) + "</h2><p>" + esc(i18n("Choisis autant de thèmes que tu veux.", "Choose as many themes as you like.")) + "</p></div><span class='interest-count'>" + esc(selectedCount ? i18n(selectedCount + " choisi" + (selectedCount > 1 ? "s" : ""), selectedCount + " selected") : i18n("facultatif", "optional")) + "</span></div><div class='interest-grid' role='group' aria-label='" + esc(i18n("Choisir des centres d’intérêt", "Choose interests")) + "'>" + interestChoices + "</div><p class='interest-footnote'>" + esc(i18n("Cette sélection sert uniquement à organiser cette visite et disparaît quand la page est rouverte.", "This selection only organises this visit and disappears when the page is reopened.")) + "</p></section>" +
           "<p id='onboarding-feedback' class='onboarding-feedback' role='status' aria-live='polite'></p><button type='submit' class='primary coral welcome-cta'>" + esc(i18n("✨ Voir mes sorties", "✨ See my events")) + "</button>" +
           "<button type='button' class='welcome-skip' data-action='skip-interests'>" + esc(i18n("Effacer mes envies", "Clear my interests")) + "</button></form>" +
@@ -2359,9 +2454,9 @@
           "<h1>" + esc(event.title) + "</h1><p class='muted'>⌖ " + esc(eventVenue()) +
           "<br>" + esc(eventDate(event)) + "<br>Rendez-vous 30 min avant le début.</p>" + officialSourceLink(event) +
           "<div class='live-banner'>" + esc(liveLabel) + "</div>" +
-          "<div class='info-card'><b>Une sortie à partager</b><p>Découvre les profils intéressés, puis laisse tes coordonnées pour faire grandir ce groupe live.</p></div>" +
-          "<div class='info-card'><b>Prix fictifs du prototype</b><p>Plein tarif individuel : " + esc(formatEuro(event.publicPrice)) +
-          "<br>Tarif groupe Never Go Alone : " + esc(formatEuro(tarifGroupe(event))) + " (−" + Math.round(TARIFICATION.REMISE_GROUPE * 100) + " %)</p><p class='tiny'>Soit " + esc(formatEuro(saving)) + " de remise groupe simulée. Les frais de service et les formules sont détaillés avant de rejoindre le groupe.</p></div>" +
+          "<div class='info-card'><b>" + esc(i18n("Une sortie à partager", "A plan to share")) + "</b><p>" + esc(i18n("Découvre les profils intéressés, puis signale ton intérêt pour faire grandir ce groupe live.", "Discover interested profiles, then register your interest to grow this live group.")) + "</p></div>" +
+          "<div class='info-card price-info-card'><b>💡 " + esc(i18n("Prix fictifs du prototype", "Fictional prototype prices")) + "</b><p>" + esc(i18n("Plein tarif individuel : ", "Individual full price: ")) + esc(formatEuro(event.publicPrice)) +
+          "<br>" + esc(i18n("Tarif groupe Never Go Alone : ", "Never Go Alone group price: ")) + esc(formatEuro(tarifGroupe(event))) + " (−" + Math.round(TARIFICATION.REMISE_GROUPE * 100) + " %)</p><p class='tiny'>" + esc(i18n("Soit ", "That is ")) + esc(formatEuro(saving)) + " " + esc(i18n("de remise groupe simulée. Les frais de service et les formules sont détaillés avant de rejoindre le groupe.", "of simulated group discount. Service fees and plans are shown before you join the group.")) + "</p></div>" +
           "<button type='button' class='primary ghost' data-action='people'>" + esc(peopleLabel) + "</button>" +
           interestManager +
           "</div><div class='fixed-action'><button type='button' class='primary " + (hasRegisteredInterest ? "ghost" : "coral") + "' data-action='" + (hasRegisteredInterest ? "people" : "join") + "'>" + esc(hasRegisteredInterest ? peopleLabel : i18n("Rejoindre le groupe", "Join the group")) + "</button></div></section>";
@@ -2458,7 +2553,7 @@
       }
 
       function journeyProgress(step, label) {
-        return "<div class='journey-progress'>Étape " + step + " sur 3 <span>· " + esc(label) + "</span></div>";
+        return "<div class='journey-progress'>" + esc(i18n("Étape " + step + " sur 3", "Step " + step + " of 3")) + " <span>· " + esc(label) + "</span></div>";
       }
 
       function surveyOption(name, value, label, selected) {
@@ -2483,7 +2578,6 @@
         if (stage === "offer" || stage === "pricing") body.offerUseful = survey.offerUseful;
         if (stage === "pricing") {
           body.subscriptionPreference = details.subscriptionPreference;
-          body.acceptableServiceFee = details.acceptableServiceFee;
           body.subscriptionFeedback = details.subscriptionFeedback || "";
         }
         return apiRequest("/api/survey-sessions", {
@@ -2495,45 +2589,47 @@
 
       function situationPage() {
         var survey = activeSurvey();
-        if (!survey) return "<section class='view'>" + header("La situation") + "<div class='scroll'><div class='empty'><h2>Choisis d’abord une sortie.</h2><p>Le court sondage est lié à la sortie que tu veux rejoindre.</p><button type='button' class='primary' data-action='explore'>Explorer les sorties</button></div></div></section>";
-        return "<section class='view'>" + header("La situation") + "<div class='scroll live-form'>" + journeyProgress(1, "La situation") +
-          "<h1>Avant de rejoindre</h1><p class='muted'>Quelques questions pour comprendre ce qui rendrait ce service vraiment utile.</p>" +
-          "<form id='survey-situation-form' class='survey-card' novalidate><h2>🤔 Quand une sortie te tente</h2><p class='survey-question'>Un événement te tente, mais personne de ton entourage ne peut ou ne veut t'accompagner. Que se passe-t-il le plus souvent ?</p>" +
-          surveyOption("survey-situation", "drop", "Je laisse tomber", survey.situation) +
-          surveyOption("survey-situation", "unenthusiastic", "J'y vais quand même, mais sans grand enthousiasme", survey.situation) +
-          surveyOption("survey-situation", "alone-fine", "J'y vais seul(e) sans aucun problème", survey.situation) +
-          "<p class='survey-privacy-note'>Réponse anonyme : aucun nom, e-mail ni profil n’est demandé pour cette étape.</p><p id='survey-feedback' class='feedback' role='status' aria-live='polite'></p><button type='submit' class='primary coral'>Continuer</button></form></div></section>";
+        if (!survey) return "<section class='view'>" + header(i18n("La situation", "The situation")) + "<div class='scroll'><div class='empty'><h2>" + esc(i18n("Choisis d’abord une sortie.", "Choose an event first.")) + "</h2><p>" + esc(i18n("Le court sondage est lié à la sortie que tu veux rejoindre.", "This short survey is linked to the event you want to join.")) + "</p><button type='button' class='primary' data-action='explore'>" + esc(i18n("Explorer les sorties", "Explore events")) + "</button></div></div></section>";
+        return "<section class='view'>" + header(i18n("La situation", "The situation")) + "<div class='scroll live-form'>" + journeyProgress(1, i18n("La situation", "The situation")) +
+          "<h1>" + esc(i18n("Avant de rejoindre", "Before you join")) + "</h1><p class='muted'>" + esc(i18n("Quelques questions pour comprendre ce qui rendrait ce service vraiment utile.", "A few questions to understand what would make this service genuinely useful.")) + "</p>" +
+          "<form id='survey-situation-form' class='survey-card' novalidate><h2>🤔 " + esc(i18n("Quand une sortie te tente", "When an event appeals to you")) + "</h2><p class='survey-question'>" + esc(i18n("Un événement te tente, mais personne de ton entourage ne peut ou ne veut t'accompagner. Que se passe-t-il le plus souvent ?", "An event appeals to you, but nobody you know can or wants to go with you. What usually happens?")) + "</p>" +
+          surveyOption("survey-situation", "drop", i18n("Je laisse tomber", "I skip it"), survey.situation) +
+          surveyOption("survey-situation", "unenthusiastic", i18n("J'y vais quand même, mais sans grand enthousiasme", "I still go, but without much enthusiasm"), survey.situation) +
+          surveyOption("survey-situation", "alone-fine", i18n("J'y vais seul(e) sans aucun problème", "I go alone, no problem"), survey.situation) +
+          "<p class='survey-privacy-note'>" + esc(i18n("Réponse anonyme : aucun nom, e-mail ni profil n’est demandé pour cette étape.", "Anonymous answer: no name, email or profile is requested at this stage.")) + "</p><p id='survey-feedback' class='feedback' role='status' aria-live='polite'></p><button type='submit' class='primary coral'>" + esc(i18n("Continuer", "Continue")) + "</button></form></div></section>";
       }
 
       function offerPage() {
         var survey = activeSurvey();
         if (!survey || !survey.situation) return situationPage();
-        return "<section class='view'>" + header("L’offre") + "<div class='scroll live-form'>" + journeyProgress(2, "L’offre") +
-          "<h1>Une sortie, mais pas seul(e).</h1><section class='survey-card'><h2>🤝 Le principe</h2><p>Avec Never Go Alone, tu rejoins un petit groupe de personnes qui ont envie de faire la même sortie que toi. Vous pouvez faire connaissance et vous rencontrer avant l’événement.</p><p style='margin-top:10px'>Tu bénéficies aussi d’un tarif de groupe réduit. Si tu y allais seul(e), sans passer par l’application, tu paierais le plein tarif de l’événement.</p></section>" +
-          "<form id='survey-offer-form' class='survey-card' novalidate><p class='survey-question'>Est-ce que ce service te serait utile ?</p>" +
-          surveyOption("survey-offer-useful", "yes", "Oui, ça m’intéresse", survey.offerUseful) +
-          surveyOption("survey-offer-useful", "no", "Non, ça ne m’intéresse pas", survey.offerUseful) +
-          "<p class='survey-privacy-note'>Ta réponse reste séparée du profil de groupe. Elle sert uniquement à analyser le prototype de façon anonyme.</p><p id='survey-feedback' class='feedback' role='status' aria-live='polite'></p><button type='submit' class='primary coral'>Continuer</button></form></div></section>";
+        return "<section class='view'>" + header(i18n("L’offre", "The offer")) + "<div class='scroll live-form'>" + journeyProgress(2, i18n("L’offre", "The offer")) +
+          "<h1>" + esc(i18n("Une sortie, mais pas seul(e).", "An event, but not alone.")) + "</h1><section class='survey-card'><h2>🤝 " + esc(i18n("Le principe", "How it works")) + "</h2><p>" + esc(i18n("Avec Never Go Alone, tu rejoins un petit groupe de personnes qui ont envie de faire la même sortie que toi. Vous pouvez faire connaissance et vous rencontrer avant l’événement.", "With Never Go Alone, you join a small group of people who want to attend the same event. You can get to know one another and meet before it starts.")) + "</p><p style='margin-top:10px'>" + esc(i18n("Tu bénéficies aussi d’un tarif de groupe réduit. Si tu y allais seul(e), sans passer par l’application, tu paierais le plein tarif de l’événement.", "You also benefit from a reduced group price. If you went alone without the app, you would pay the event’s full price.")) + "</p></section>" +
+          "<form id='survey-offer-form' class='survey-card' novalidate><p class='survey-question'>" + esc(i18n("Est-ce que ce service te serait utile ?", "Would this service be useful to you?")) + "</p>" +
+          surveyOption("survey-offer-useful", "yes", i18n("Oui, ça m’intéresse", "Yes, I’m interested"), survey.offerUseful) +
+          surveyOption("survey-offer-useful", "no", i18n("Non, ça ne m’intéresse pas", "No, I’m not interested"), survey.offerUseful) +
+          "<p class='survey-privacy-note'>" + esc(i18n("Ta réponse reste séparée du profil de groupe. Elle sert uniquement à analyser le prototype de façon anonyme.", "Your answer stays separate from your group profile. It is only used to analyse this prototype anonymously.")) + "</p><p id='survey-feedback' class='feedback' role='status' aria-live='polite'></p><button type='submit' class='primary coral'>" + esc(i18n("Continuer", "Continue")) + "</button></form></div></section>";
       }
 
       function offerThanksPage() {
-        return "<section class='view'>" + homeHeader("Merci") + "<div class='scroll'><div class='empty'><h2>Merci pour ton retour. ✨</h2><p>Ta réponse anonyme est enregistrée. Elle nous aide à vérifier si Never Go Alone répond à un vrai besoin, sans créer de profil ni demander de coordonnées.</p><button type='button' class='primary' data-action='explore'>Retour aux sorties</button></div></div></section>";
+        return "<section class='view'>" + homeHeader(i18n("Merci", "Thank you")) + "<div class='scroll'><div class='empty'><h2>" + esc(i18n("Merci pour ton retour. ✨", "Thanks for your feedback. ✨")) + "</h2><p>" + esc(i18n("Ta réponse anonyme est enregistrée. Elle nous aide à vérifier si Never Go Alone répond à un vrai besoin.", "Your anonymous response is saved. It helps us check whether Never Go Alone meets a real need.")) + "</p><button type='button' class='primary' data-action='explore'>" + esc(i18n("Retour aux sorties", "Back to events")) + "</button></div></div></section>";
       }
 
       function joinPage() {
         var survey = activeSurvey();
         if (!survey || survey.offerUseful !== "yes") {
-          return "<section class='view'>" + header("Rejoindre le groupe") + "<div class='scroll'><div class='empty'><h2>Commence par le court sondage.</h2><p>Il permet de personnaliser cette simulation avant les informations de groupe.</p><button type='button' class='primary' data-action='join'>Commencer</button></div></div></section>";
+          return "<section class='view'>" + header(i18n("Rejoindre le groupe", "Join the group")) + "<div class='scroll'><div class='empty'><h2>" + esc(i18n("Commence par le court sondage.", "Start with the short survey.")) + "</h2><p>" + esc(i18n("Il permet de personnaliser cette simulation avant les informations de groupe.", "It personalises this simulation before the group details.")) + "</p><button type='button' class='primary' data-action='join'>" + esc(i18n("Commencer", "Start")) + "</button></div></div></section>";
         }
-        return "<section class='view'>" + header("Rejoindre le groupe") + liveJoinForm(selectedEvent()) + "</section>";
+        if (!personalProfileReady(state.personalProfile)) {
+          return "<section class='view'>" + header(i18n("Rejoindre le groupe", "Join the group")) + "<div class='scroll'><div class='empty'><h2>" + esc(i18n("Ton profil est nécessaire.", "Your profile is needed.")) + "</h2><p>" + esc(i18n("Renseigne-le une seule fois : il sera ensuite utilisé automatiquement pour tous les groupes que tu rejoins.", "Fill it in once: it will then be automatically used for every group you join.")) + "</p><button type='button' class='primary coral' data-action='edit-profile'>" + esc(i18n("Compléter mon profil", "Complete my profile")) + "</button></div></div></section>";
+        }
+        return "<section class='view'>" + header(i18n("Rejoindre le groupe", "Join the group")) + liveJoinForm(selectedEvent()) + "</section>";
       }
 
       function liveJoinForm(event) {
         var count = liveCount(event);
         var waiting = state.joinStatus === "sending";
-        var personal = state.personalProfile || normalisePersonalProfile({});
-        var savedGender = ["woman", "man"].indexOf(personal.gender) >= 0 ? personal.gender : "unspecified";
-        var countNote = count ? count + " personne" + (count > 1 ? "s sont" : " est") + " déjà intéressée" + (count > 1 ? "s" : "") + "." : "Tu peux lancer ce groupe live.";
+        var personal = normalisePersonalProfile(state.personalProfile);
+        var countNote = count ? i18n(count + " personne" + (count > 1 ? "s sont" : " est") + " déjà intéressée" + (count > 1 ? "s" : "") + ".", count + " person" + (count > 1 ? "s are" : " is") + " already interested.") : i18n("Tu peux lancer ce groupe live.", "You can start this live group.");
         var publicPrice = Number(event.publicPrice);
         var groupPrice = tarifGroupe(event);
         var serviceFee = fraisService(event);
@@ -2541,42 +2637,35 @@
         var groupSaving = remiseGroupe(event);
         var tripsToBreakEven = sortiesPourRentabiliser(event);
         var noSubscriptionNote = groupSaving > serviceFee
-          ? "Sans abonnement, la remise groupe reste supérieure aux frais de service : " + formatEuro(groupSaving - serviceFee) + " d’écart par rapport au plein tarif dans cette simulation."
-          : "Sans abonnement, les montants sont simplement affichés : la remise groupe ne couvre pas entièrement les frais de service dans cette simulation.";
-        return "<div class='scroll live-form'>" + journeyProgress(3, "Rejoindre le groupe") +
-          "<h1>Rejoins ce groupe</h1><p class='muted'>Tu as indiqué que le service t’intéressait. Voici la dernière étape du test, puis tu pourras ajouter ton profil à ce groupe fictif.</p>" +
+          ? i18n("Sans abonnement, la remise groupe reste supérieure aux frais de service : " + formatEuro(groupSaving - serviceFee) + " d’écart par rapport au plein tarif dans cette simulation.", "Without a subscription, the group discount still exceeds the service fee: " + formatEuro(groupSaving - serviceFee) + " below the full price in this simulation.")
+          : i18n("Sans abonnement, les montants sont simplement affichés : la remise groupe ne couvre pas entièrement les frais de service dans cette simulation.", "Without a subscription, the amounts are simply shown: the group discount does not fully cover the service fee in this simulation.");
+        var profileLine = [
+          personal.firstName,
+          personal.age ? personal.age + " " + i18n("ans", "years old") : "",
+          personal.nationality,
+          activityForDisplay(personal.activity)
+        ].filter(Boolean).join(" · ");
+        return "<div class='scroll live-form'>" + journeyProgress(3, i18n("Rejoindre le groupe", "Join the group")) +
+          "<h1>" + esc(i18n("Rejoins ce groupe", "Join this group")) + "</h1><p class='muted'>" + esc(i18n("Tu as indiqué que le service t’intéressait. Voici la dernière étape du test : ton profil déjà renseigné sera ajouté à ce groupe fictif.", "You said the service interests you. This is the final step of the test: the profile you already completed will be added to this fictional group.")) + "</p>" +
           "<div class='live-banner'>" + esc(countNote) + "</div>" +
           "<form id='live-interest-form' novalidate autocomplete='off'>" +
-          "<section class='subscription-test' aria-labelledby='subscription-test-heading'><div class='subscription-test-head'><span class='subscription-test-icon' aria-hidden='true'>💸</span><div><h2 id='subscription-test-heading'>La formule qui te conviendrait</h2><p>Tous les membres bénéficient du tarif groupe réduit. L’abonnement supprime les frais de service sur toutes les sorties.</p></div></div>" +
-          "<div class='pricing-simulation'><h3>Simulation pour cette sortie</h3><div class='pricing-row'><span>Plein tarif hors application</span><b>" + esc(formatEuro(publicPrice)) + "</b></div><div class='pricing-row'><span>Sans abonnement · tarif groupe + " + esc(formatEuro(serviceFee)) + " de frais</span><b>" + esc(formatEuro(noSubscriptionPrice)) + "</b></div><div class='pricing-row highlight'><span>Avec abonnement · tarif groupe + 0 € de frais</span><b>" + esc(formatEuro(groupPrice)) + "</b></div><p>" + esc(noSubscriptionNote) + " À partir de " + tripsToBreakEven + " sortie" + (tripsToBreakEven > 1 ? "s" : "") + " par mois, les " + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL)) + " sont rentabilisés grâce aux frais de service évités.</p></div>" +
-          "<div class='field'><label>Quelle formule te conviendrait le mieux ?</label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='monthly' required><span><b>" + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL)) + " par mois</b><small>Un accès aux tarifs de groupe sans frais de service</small></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='quarterly'><span><b>" + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_TRIMESTRIEL)) + " par trimestre</b><small>Environ 2,66 € par mois, sans frais de service, avec un engagement de trois mois</small></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='per-event'><span><b>Payer seulement à l’événement</b><small>Tu paies le tarif de groupe plus " + esc(formatEuro(serviceFee)) + " de frais de service à chaque sortie</small></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='no'><span><b>Je ne paierais pas d’abonnement</b><small>Ton avis nous aide tout autant à concevoir la bonne formule.</small></span></label></div>" +
-          "<div class='field'><label>Quel niveau de frais de service te semblerait acceptable par réservation ?</label>" +
-          "<label class='subscription-option'><input type='radio' name='live-acceptable-service-fee' value='1.50' required><span><b>1,50 €</b></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-acceptable-service-fee' value='2'><span><b>2 €</b></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-acceptable-service-fee' value='3'><span><b>3 €</b></span></label></div>" +
-          "<div class='field'><label for='live-subscription-feedback'>Qu’est-ce qui rendrait cette formule plus intéressante ? (facultatif)</label><textarea id='live-subscription-feedback' name='subscriptionFeedback' maxlength='300' placeholder='Ex. davantage de réductions, plus de sorties chaque semaine…'></textarea></div>" +
-          "<p class='subscription-disclaimer'>Test uniquement : aucune carte bancaire, aucun paiement et aucun engagement ne sont demandés. Les montants, événements et données présentés sont fictifs. Ta réponse est privée et n’apparaît jamais dans le groupe.</p></section>" +
-          "<section class='survey-card'><h2>👤 Ton profil pour ce groupe</h2><p>Les réponses tarifaires ci-dessus sont enregistrées dans un sondage anonyme séparé. Les informations suivantes servent uniquement à afficher ton profil si tu finalises ton intérêt pour cette sortie.</p></section>" +
-          "<p class='tiny'>✨ Les informations de ton profil sont préremplies. Tu peux les modifier pour cette sortie.</p>" +
-          "<div class='two-columns'><div class='field'><label for='live-first-name'>Prénom</label><input id='live-first-name' name='firstName' maxlength='30' autocomplete='off' value='" + esc(personal.firstName || "") + "' required></div><div class='field'><label for='live-last-name'>Nom</label><input id='live-last-name' name='lastName' maxlength='50' autocomplete='off' value='" + esc(personal.lastName || "") + "' required></div></div>" +
-          "<div class='field'><label for='live-email'>E-mail (privé)</label><input id='live-email' name='email' type='email' maxlength='254' autocomplete='off' inputmode='email' required></div>" +
-          "<div class='two-columns'><div class='field'><label for='live-age'>Âge</label><input id='live-age' name='age' type='number' min='18' max='30' step='1' inputmode='numeric' autocomplete='off' value='" + esc(personal.age === "" ? "" : personal.age) + "' placeholder='24' required></div><div class='field'><label for='live-nationality'>Nationalité</label><input id='live-nationality' name='nationality' maxlength='70' autocomplete='off' placeholder='Ex. française, ivoirienne' required></div></div>" +
-          "<div class='field'><label for='live-activity'>Activité</label><input id='live-activity' name='activity' maxlength='80' autocomplete='off' placeholder='Ex. master finance' required></div>" +
-          "<p class='tiny'>🌐 Les intitulés d’activité courants sont affichés dans la langue de l’application. Les intitulés très spécifiques restent inchangés.</p>" +
-          "<div class='field'><label for='live-gender'>Sexe</label><select id='live-gender' name='gender'><option value='unspecified'" + (savedGender === "unspecified" ? " selected" : "") + ">Je préfère ne pas préciser</option><option value='woman'" + (savedGender === "woman" ? " selected" : "") + ">Femme</option><option value='man'" + (savedGender === "man" ? " selected" : "") + ">Homme</option></select></div>" +
-          "<div class='field'><label for='live-description'>Décris-toi en quelques mots (facultatif)</label><textarea id='live-description' name='description' maxlength='320' placeholder='Ex. toujours partant·e pour découvrir des sorties et rencontrer du monde.'></textarea></div>" +
-          "<div class='field'><label for='live-passions'>Tes passions (facultatif)</label><input id='live-passions' name='passions' maxlength='180' placeholder='Ex. basket, cinéma, cuisine, voyages'></div>" +
-          "<p class='tiny'>Le sexe choisi apparaît sur ton profil. Tu peux choisir « Je préfère ne pas préciser » ; aucune photo réelle n’est demandée.</p><p class='tiny'>🪪 Au lancement, les profils seront vérifiés avec une pièce d’identité. Ce prototype ne demande aucun document.</p>" +
-          "<div class='privacy-card'><b>🔒 Tes données personnelles restent privées</b><p>Aucune donnée nominative n’est transmise aux organisateurs. Pour eux, Never Go Alone ne présenterait que des statistiques agrégées et anonymisées ainsi que des volumes potentiels de participants. Tout partage nominatif nécessiterait ton consentement distinct.</p></div>" +
+          "<section class='subscription-test' aria-labelledby='subscription-test-heading'><div class='subscription-test-head'><span class='subscription-test-icon' aria-hidden='true'>💸</span><div><h2 id='subscription-test-heading'>" + esc(i18n("La formule qui te conviendrait", "The plan that would suit you")) + "</h2><p>" + esc(i18n("Tous les membres bénéficient du tarif groupe réduit. L’abonnement supprime les frais de service sur toutes les sorties.", "Every member benefits from the reduced group price. The subscription removes service fees on every event.")) + "</p></div></div>" +
+          "<div class='pricing-simulation'><h3>" + esc(i18n("Simulation pour cette sortie", "Simulation for this event")) + "</h3><div class='pricing-row full-price'><span>" + esc(i18n("Plein tarif hors application", "Full price outside the app")) + "</span><b>" + esc(formatEuro(publicPrice)) + "</b></div><div class='pricing-row per-event-price'><span>" + esc(i18n("Sans abonnement · tarif groupe + ", "Without subscription · group price + ")) + esc(formatEuro(serviceFee)) + " " + esc(i18n("de frais", "service fee")) + "</span><b>" + esc(formatEuro(noSubscriptionPrice)) + "</b></div><div class='pricing-row highlight'><span>" + esc(i18n("Avec abonnement · tarif groupe + 0 € de frais", "With subscription · group price + €0 fees")) + "</span><b>" + esc(formatEuro(groupPrice)) + "</b></div><p>" + esc(noSubscriptionNote) + " " + esc(i18n("À partir de ", "From ")) + tripsToBreakEven + " " + esc(i18n("sortie" + (tripsToBreakEven > 1 ? "s" : "") + " par mois, les ", "event" + (tripsToBreakEven > 1 ? "s" : "") + " per month, the ")) + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL)) + " " + esc(i18n("sont rentabilisés grâce aux frais de service évités.", "subscription pays for itself through avoided service fees.")) + "</p></div>" +
+          "<div class='field'><label>" + esc(i18n("Quelle formule te conviendrait le mieux ?", "Which plan would suit you best?")) + "</label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='monthly' required><span><b>" + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL)) + " " + esc(i18n("par mois", "per month")) + "</b><small>" + esc(i18n("Un accès aux tarifs de groupe sans frais de service", "Access to group prices without service fees")) + "</small></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='quarterly'><span><b>" + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_TRIMESTRIEL)) + " " + esc(i18n("par trimestre", "per quarter")) + "</b><small>" + esc(i18n("Environ 2,66 € par mois, sans frais de service, avec un engagement de trois mois", "Around €2.66 per month, no service fees, with a three-month commitment")) + "</small></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='per-event'><span><b>" + esc(i18n("Payer seulement à l’événement", "Pay per event")) + "</b><small>" + esc(i18n("Tu paies le tarif de groupe plus ", "You pay the group price plus ")) + esc(formatEuro(serviceFee)) + " " + esc(i18n("de frais de service à chaque sortie", "service fee for each event")) + "</small></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='no'><span><b>" + esc(i18n("Je n’utiliserais pas l’application avec ce modèle", "I would not use the app with this model")) + "</b><small>" + esc(i18n("Cette proposition ne me conviendrait pas.", "This offer would not suit me.")) + "</small></span></label></div>" +
+          "<div class='field'><label for='live-subscription-feedback'>" + esc(i18n("Qu’est-ce qui rendrait cette formule plus intéressante ? (facultatif)", "What would make this plan more appealing? (optional)")) + "</label><textarea id='live-subscription-feedback' name='subscriptionFeedback' maxlength='300' placeholder='" + esc(i18n("Ex. davantage de réductions, plus de sorties chaque semaine…", "E.g. more discounts, more events each week…")) + "'></textarea></div>" +
+          "<p class='subscription-disclaimer'>" + esc(i18n("Test uniquement : aucune carte bancaire, aucun paiement et aucun engagement ne sont demandés. Les montants, événements et données présentés sont fictifs. Ta réponse est privée et n’apparaît jamais dans le groupe.", "Test only: no bank card, payment or commitment is requested. The amounts, events and data shown are fictional. Your answer is private and never appears in the group.")) + "</p></section>" +
+          "<section class='survey-card profile-summary-card'><h2>👤 " + esc(i18n("Ton profil est prêt", "Your profile is ready")) + "</h2><p>" + esc(i18n("Tu ne remplis aucune information personnelle une seconde fois.", "You do not fill in any personal details a second time.")) + "</p><p class='profile-summary-line'>" + esc(profileLine) + "</p><p class='tiny'>" + esc(i18n("Ce sont ces informations qui seront utilisées pour ton profil dans le groupe après ton accord ci-dessous. Ton nom complet et ton e-mail restent privés.", "These are the details that will be used for your group profile after your consent below. Your full name and email remain private.")) + "</p></section>" +
+          "<p class='tiny'>🪪 " + esc(i18n("Au lancement, les profils seront vérifiés avec une pièce d’identité. Ce prototype ne demande aucun document.", "At launch, profiles will be verified with government-issued ID. This prototype asks for no document.")) + "</p>" +
+          "<div class='privacy-card'><b>🔒 " + esc(i18n("Tes données personnelles restent privées", "Your personal data stays private")) + "</b><p>" + esc(i18n("Aucune donnée nominative n’est transmise aux organisateurs. Pour eux, Never Go Alone ne présenterait que des statistiques agrégées et anonymisées ainsi que des volumes potentiels de participants. Tout partage nominatif nécessiterait ton consentement distinct.", "No personally identifiable data is shared with organisers. For them, Never Go Alone would only provide aggregated, anonymous statistics and potential participant volumes. Any named-data sharing would require your separate consent.")) + "</p></div>" +
           "<div class='honeypot' aria-hidden='true'><label for='live-website'>Website</label><input id='live-website' name='website' tabindex='-1' autocomplete='off'></div>" +
-          "<label class='check'><input id='live-adult' type='checkbox' required><span>J’ai au moins 18 ans.</span></label>" +
-          "<label class='check'><input id='live-public-consent' type='checkbox' required><span>J’accepte que mon prénom, mon âge, ma nationalité, mon genre renseigné, mon activité, ma description, mes passions et mon avatar illustré soient visibles sur la fiche de cet événement. Mon nom et mon e-mail ne seront jamais affichés.</span></label>" +
-          "<label class='check'><input id='live-contact-consent' type='checkbox'><span>Je souhaite recevoir les nouvelles de Never Go Alone par e-mail (facultatif). Mon e-mail est transmis à l’équipe Never Go Alone, jamais aux organisateurs sans mon accord distinct.</span></label>" +
-          "<p id='live-join-feedback' class='feedback' role='status' aria-live='polite'></p><div class='live-form-actions'><button type='submit' class='primary coral'" + (waiting ? " disabled" : "") + ">" + esc(waiting ? "Envoi…" : "Envoyer et ajouter mon profil") + "</button></div></form></div>";
+          "<label class='check'><input id='live-adult' type='checkbox' required><span>" + esc(i18n("J’ai au moins 18 ans.", "I am at least 18 years old.")) + "</span></label>" +
+          "<label class='check'><input id='live-public-consent' type='checkbox' required><span>" + esc(i18n("J’accepte que mon prénom, mon âge, ma nationalité, mon genre renseigné, mon activité, ma description, mes passions et mon avatar illustré soient visibles sur la fiche de cet événement. Mon nom et mon e-mail ne seront jamais affichés.", "I agree that my first name, age, nationality, chosen gender, occupation, description, passions and illustrated avatar may be visible on this event’s page. My last name and email will never be displayed.")) + "</span></label>" +
+          "<label class='check'><input id='live-contact-consent' type='checkbox'><span>" + esc(i18n("Je souhaite recevoir les nouvelles de Never Go Alone par e-mail (facultatif). Mon e-mail est transmis à l’équipe Never Go Alone, jamais aux organisateurs sans mon accord distinct.", "I would like to receive Never Go Alone updates by email (optional). My email is sent to the Never Go Alone team, never to organisers without my separate consent.")) + "</span></label>" +
+          "<p id='live-join-feedback' class='feedback' role='status' aria-live='polite'></p><div class='live-form-actions'><button type='submit' class='primary coral'" + (waiting ? " disabled" : "") + ">" + esc(waiting ? i18n("Envoi…", "Sending…") : i18n("Envoyer et ajouter mon profil", "Send and add my profile")) + "</button></div></form></div>";
       }
 
       function contactPage() {
@@ -2586,7 +2675,7 @@
         return "<section class='view'>" + homeHeader(i18n("C’est envoyé", "Sent")) + "<div class='scroll'>" +
           "<h1>" + esc(i18n("Ton profil a été ajouté", "Your profile has been added")) + "</h1>" +
           "<div class='success-card'><b>✓ " + esc(i18n("Ton formulaire a été envoyé et ton profil est maintenant visible dans ce groupe live.", "Your form was sent and your profile is now visible in this live group.")) + "</b><p>" + esc(countNote) + "</p></div>" +
-          "<p class='muted'>Merci pour ton retour. Ton sondage tarifaire est enregistré anonymement, séparément de ton profil. Aucun paiement, aucune carte bancaire et aucun engagement n’ont été demandés aujourd’hui.</p>" +
+          "<p class='muted'>" + esc(i18n("Merci pour ton retour. Ton sondage tarifaire est enregistré anonymement, séparément de ton profil. Aucun paiement, aucune carte bancaire et aucun engagement n’ont été demandés aujourd’hui.", "Thanks for your feedback. Your pricing survey is saved anonymously, separately from your profile. No payment, bank card or commitment was requested today.")) + "</p>" +
           "<button type='button' class='primary' data-action='home'>" + esc(i18n("Retourner à l’accueil", "Return to Home")) + "</button>" +
           "<button type='button' class='primary ghost withdraw-button' data-action='withdraw'>" + esc(i18n("Retirer mon intérêt", "Remove my interest")) + "</button>" +
           "<p id='withdraw-feedback' class='feedback' role='status' aria-live='polite'></p>" +
@@ -2686,14 +2775,14 @@
         var interestsSummary = chosenInterests.length ? chosenInterests.map(interestLabel).join(", ") : i18n("Aucune envie choisie pour le moment.", "No interests chosen yet.");
         var personal = state.personalProfile || normalisePersonalProfile({});
         var summary = userProfileSummary();
-        return "<section class='view'>" + header("Mon profil") + "<div class='scroll'><div class='profile-hero'>" +
+        return "<section class='view'>" + header(i18n("Mon profil", "My profile")) + "<div class='scroll'>" + languagePicker("welcome-language") + "<div class='profile-hero'>" +
           avatar({ firstName: personal.firstName || "?" }, 4) + "<h1>👋 " + esc(userDisplayName()) + " <span class='profile-verification-icon' role='img' aria-label='" + esc(i18n("Vérification d’identité prévue au lancement", "Identity verification planned at launch")) + "'>✓</span></h1><p class='muted'>" + esc(summary || state.city) + "</p></div>" +
           "<div class='profile-card'><b>🔒 " + esc(i18n("Informations de cette visite", "Details for this visit")) + "</b><p>" + esc(i18n("Ton prénom, ton nom, ton âge et ton sexe servent à personnaliser ce prototype. Ils ne sont pas enregistrés dans le navigateur et deviennent visibles dans un groupe seulement après une participation finalisée.", "Your first name, last name, age and sex personalise this prototype. They are not stored in the browser and only become visible in a group after participation is completed.")) + "</p><button type='button' class='profile-inline-action' data-action='edit-profile'>" + esc(i18n("Modifier mes informations", "Edit my details")) + "</button></div>" +
           "<div class='profile-card verification-card'><b>🪪 " + esc(i18n("Vérification d’identité au lancement", "Identity verification at launch")) + "</b><p>" + esc(i18n("Dans la version finale, chaque profil sera vérifié avec une pièce d’identité. Ce prototype ne demande, ne collecte et ne conserve aucun document d’identité.", "In the final version, every profile will be verified with government-issued ID. This prototype does not request, collect or retain any identity document.")) + "</p></div>" +
           "<div class='profile-card'><b>✨ " + esc(i18n("Mes envies", "My interests")) + "</b><p>" + esc(interestsSummary) + "</p><button type='button' class='profile-inline-action' data-action='edit-interests'>" + esc(i18n("Modifier ma sélection", "Edit my selection")) + "</button></div>" +
           "<button type='button' class='primary' data-action='about'>" + esc(i18n("📖 Découvrir Never Go Alone", "📖 Discover Never Go Alone")) + "</button>" +
           "<div style='height:8px'></div><button type='button' class='primary ghost' data-action='toggle-dark'>" +
-          (state.dark ? "Passer en mode clair" : "Passer en mode sombre") + "</button></div>" + bottomNav("profile") + "</section>";
+          (state.dark ? i18n("Passer en mode clair", "Switch to light mode") : i18n("Passer en mode sombre", "Switch to dark mode")) + "</button></div>" + bottomNav("profile") + "</section>";
       }
 
       function aboutStory(isLanding) {
@@ -2730,11 +2819,11 @@
         var finalAction = isLanding ? "start-onboarding" : "edit-profile";
         var finalLabel = isLanding ? i18n("✨ Créer mon profil", "✨ Create my profile") : i18n("✨ Créer ou modifier mon profil", "✨ Create or edit my profile");
         return "<section class='view " + (isLanding ? "landing-screen" : "") + "'>" + (isLanding ? "" : header(i18n("À propos", "About"))) + "<div class='scroll about-scroll" + (isLanding ? "" : " with-bottom-nav") + "'>" +
-          "<section class='about-story-hero " + (isLanding ? "landing-hero" : "") + "'><span class='about-story-kicker'>✨ " + esc(i18n("NOTRE HISTOIRE", "OUR STORY")) + "</span><h1>" + esc(i18n("Une sortie, des gens qui ont envie d’y aller aussi.", "One event, people who want to go too.")) + "</h1><p>" + esc(i18n("Never Go Alone s’adresse aux personnes qui ont envie de sortir, de rencontrer du monde et de partager un événement sans y aller seules.", "Never Go Alone is for people who want to go out, meet others and share an event without going alone.")) + "</p><span class='scroll-hint'>↓ " + esc(i18n("Fais défiler", "Keep scrolling")) + "</span></section>" +
+          "<section class='about-story-hero " + (isLanding ? "landing-hero" : "") + "'>" + (isLanding ? languagePicker("landing-language") : "") + "<span class='about-story-kicker'>✨ " + esc(i18n("NOTRE HISTOIRE", "OUR STORY")) + "</span><h1>" + esc(i18n("Une sortie, des gens qui ont envie d’y aller aussi.", "One event, people who want to go too.")) + "</h1><p>" + esc(i18n("Never Go Alone s’adresse aux personnes qui ont envie de sortir, de rencontrer du monde et de partager un événement sans y aller seules.", "Never Go Alone is for people who want to go out, meet others and share an event without going alone.")) + "</p><span class='scroll-hint'>↓ " + esc(i18n("Fais défiler", "Keep scrolling")) + "</span></section>" +
           chapters.map(function (chapter) {
             return "<article class='about-chapter' data-reveal data-tone='" + esc(chapter.tone) + "'><span class='about-number' aria-hidden='true'>" + esc(chapter.emoji) + "</span><h2>" + esc(chapter.title) + "</h2><p>" + esc(chapter.text) + "</p><span class='about-orb' aria-hidden='true'></span></article>";
           }).join("") +
-          "<div class='private-lock'><b>🔒 " + esc(i18n("Un prototype qui écoute", "A prototype that listens")) + "</b><p>" + esc(i18n("Cette version sert à mesurer l’intérêt avant le lancement. Les coordonnées ne sont demandées qu’au moment où tu rejoins une sortie, jamais pour explorer.", "This version measures interest before launch. Contact details are requested only when you join an event, never while you explore.")) + "</p></div>" +
+          "<div class='private-lock'><b>🔒 " + esc(i18n("Un prototype qui écoute", "A prototype that listens")) + "</b><p>" + esc(i18n("Cette version sert à mesurer l’intérêt avant le lancement. Ton profil est renseigné une seule fois pour cette visite, n’est jamais ajouté au lien et sert automatiquement lorsque tu choisis de rejoindre un groupe.", "This version measures interest before launch. Your profile is completed only once for this visit, is never added to the link, and is used automatically when you choose to join a group.")) + "</p></div>" +
           "<div class='private-lock verification-card'><b>🪪 " + esc(i18n("Une identité vérifiée au lancement", "Identity verification at launch")) + "</b><p>" + esc(i18n("Dans la version finale, les profils seront vérifiés avec une pièce d’identité. Ce prototype n’en demande ni n’en conserve aucune.", "In the final version, profiles will be verified with government-issued ID. This prototype neither requests nor stores any identity document.")) + "</p></div>" +
           "<button type='button' class='primary coral about-final' data-action='" + finalAction + "'>" + esc(finalLabel) + "</button></div>" + (isLanding ? "" : bottomNav("about")) + "</section>";
       }
@@ -2795,6 +2884,7 @@
         };
         app.innerHTML = (views[state.screen] || explore)();
         applyLocale();
+        localizeElement(app);
         window.requestAnimationFrame(revealAboutChapters);
       }
 
@@ -2852,6 +2942,10 @@
         if (action === "withdraw" && window.confirm(i18n("Retirer ton intérêt de ce groupe ? Ton profil ne sera plus visible aux autres personnes intéressées.", "Remove your interest from this group? Your profile will no longer be visible to the other interested people."))) withdrawLiveInterest();
         if (action === "about") navigate("about");
         if (action === "toggle-dark") { state.dark = !state.dark; render(); }
+        if (action === "set-locale") {
+          state.locale = control.dataset.locale === "en" ? "en" : "fr";
+          render();
+        }
       });
 
       app.addEventListener("input", function (event) {
@@ -2859,7 +2953,12 @@
         var onboardingKeys = {
           "onboarding-first-name": "firstName",
           "onboarding-last-name": "lastName",
-          "onboarding-age": "age"
+          "onboarding-email": "email",
+          "onboarding-age": "age",
+          "onboarding-nationality": "nationality",
+          "onboarding-activity": "activity",
+          "onboarding-description": "description",
+          "onboarding-passions": "passions"
         };
         if (onboardingKeys[input.id]) {
           state.profileDraft[onboardingKeys[input.id]] = input.value;
@@ -2920,11 +3019,17 @@
         var profileData = normalisePersonalProfile({
           firstName: onboardingFieldValue("onboarding-first-name"),
           lastName: onboardingFieldValue("onboarding-last-name"),
+          email: onboardingFieldValue("onboarding-email"),
           age: onboardingFieldValue("onboarding-age"),
-          gender: onboardingFieldValue("onboarding-gender")
+          nationality: onboardingFieldValue("onboarding-nationality"),
+          activity: onboardingFieldValue("onboarding-activity"),
+          gender: onboardingFieldValue("onboarding-gender"),
+          description: onboardingFieldValue("onboarding-description"),
+          passions: onboardingFieldValue("onboarding-passions")
         });
-        if (!profileData.firstName || !profileData.lastName || !profileData.age) {
-          setOnboardingFeedback(i18n("Renseigne ton prénom, ton nom et ton âge (18–30 ans) pour continuer.", "Enter your first name, last name and age (18–30) to continue."));
+        var emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileData.email);
+        if (!profileData.firstName || !profileData.lastName || !profileData.age || !emailLooksValid || !profileData.nationality || !profileData.activity) {
+          setOnboardingFeedback(i18n("Renseigne ton prénom, ton nom, ton e-mail, ton âge (18–30 ans), ta nationalité et ton activité pour continuer.", "Enter your first name, last name, email, age (18–30), nationality and occupation to continue."));
           return;
         }
         state.personalProfile = profileData;
@@ -2994,50 +3099,48 @@
         var form = app.querySelector("#live-interest-form");
         if (!form || state.joinStatus === "sending") return;
         var survey = activeSurvey();
-        var firstName = joinFieldValue("live-first-name");
-        var lastName = joinFieldValue("live-last-name");
-        var email = joinFieldValue("live-email").toLowerCase();
-        var age = Number(joinFieldValue("live-age"));
-        var nationality = joinFieldValue("live-nationality");
-        var activity = joinFieldValue("live-activity");
-        var description = joinFieldValue("live-description");
-        var passions = joinFieldValue("live-passions");
-        var gender = joinFieldValue("live-gender") || "unspecified";
+        var personal = normalisePersonalProfile(state.personalProfile);
+        var firstName = personal.firstName;
+        var lastName = personal.lastName;
+        var email = personal.email;
+        var age = personal.age;
+        var nationality = personal.nationality;
+        var activity = personal.activity;
+        var description = personal.description;
+        var passions = personal.passions;
+        var gender = personal.gender || "unspecified";
         var subscriptionPreference = joinCheckedValue("live-subscription-preference");
-        var acceptableServiceFee = joinCheckedValue("live-acceptable-service-fee");
         var subscriptionFeedback = joinFieldValue("live-subscription-feedback");
         var website = joinFieldValue("live-website");
         var adult = !!(app.querySelector("#live-adult") || {}).checked;
         var publicConsent = !!(app.querySelector("#live-public-consent") || {}).checked;
         var contactConsent = !!(app.querySelector("#live-contact-consent") || {}).checked;
-        var emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-        if (!firstName || !lastName || !activity || !emailLooksValid || !Number.isInteger(age) || age < 18 || age > 30 || !nationality) {
-          setJoinFeedback("Renseigne ton prénom, ton nom, ton e-mail, ton âge (18–30 ans), ta nationalité et ton activité.");
+        if (!personalProfileReady(personal)) {
+          setJoinFeedback(i18n("Ton profil doit être complété avant de rejoindre un groupe.", "Your profile must be completed before you join a group."));
           return;
         }
         if (!survey || survey.offerUseful !== "yes" || !survey.situation) {
-          setJoinFeedback("Reprends le parcours depuis la première étape avant d’ajouter ton profil.");
+          setJoinFeedback(i18n("Reprends le parcours depuis la première étape avant d’ajouter ton profil.", "Restart the journey from step one before adding your profile."));
           return;
         }
-        if (!subscriptionPreference || !acceptableServiceFee) {
-          setJoinFeedback("Choisis une formule et le niveau de frais de service qui te semblerait acceptable.");
+        if (!subscriptionPreference) {
+          setJoinFeedback(i18n("Choisis la formule qui te correspond le mieux.", "Choose the plan that suits you best."));
           return;
         }
         if (!adult || !publicConsent) {
-          setJoinFeedback("Confirme les deux cases requises pour envoyer ton formulaire.");
+          setJoinFeedback(i18n("Confirme les deux cases requises pour envoyer ton formulaire.", "Confirm the two required boxes to send your form."));
           return;
         }
 
         state.joinStatus = "sending";
-        setJoinFeedback("Enregistrement du sondage et ajout de ton profil…");
+        setJoinFeedback(i18n("Enregistrement du sondage et ajout de ton profil…", "Saving the survey and adding your profile…"));
         var submitButton = form.querySelector("button[type='submit']");
         if (submitButton) submitButton.disabled = true;
         var event = selectedEvent();
         try {
           await saveSurveyStage("pricing", {
             subscriptionPreference: subscriptionPreference,
-            acceptableServiceFee: acceptableServiceFee,
             subscriptionFeedback: subscriptionFeedback
           });
           var payload = await apiRequest("/api/interests", {
@@ -3062,13 +3165,8 @@
           });
           applyLiveEvent(event, payload);
           if (payload.member && payload.withdrawToken) rememberWithdrawal(event, payload.member.id, payload.withdrawToken);
-          state.personalProfile = normalisePersonalProfile({
-            firstName: firstName,
-            lastName: lastName,
-            age: age,
-            gender: gender
-          });
-          state.profileDraft = Object.assign({}, state.personalProfile);
+          state.personalProfile = personal;
+          state.profileDraft = Object.assign({}, personal);
           persistPersonalProfile();
           survey.completed = true;
           state.joinStatus = "";
