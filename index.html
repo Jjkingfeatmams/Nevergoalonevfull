@@ -2527,8 +2527,9 @@
       }
 
       // Versioned so anonymous IDs created by an earlier prototype release
-      // cannot be revived after this flow changes.
-      var surveySessionStoragePrefix = "never-go-alone:survey-session:v2:";
+      // cannot be revived after this flow changes. v3 also clears IDs from
+      // the deployment that returned an unstructured conflict response.
+      var surveySessionStoragePrefix = "never-go-alone:survey-session:v3:";
 
       function randomSurveySessionId() {
         if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
@@ -2591,6 +2592,16 @@
         if (feedback) feedback.textContent = message || "";
       }
 
+      function isSurveySessionConflict(error) {
+        // New Functions return a stable code. Older deployed Functions only
+        // return this French 409 message, so support both during rollout.
+        // Do not treat unrelated 409 responses as a survey-ID conflict.
+        return !!(error && (
+          error.code === "survey-session-conflict" ||
+          (error.status === 409 && error.message === "Cette session de sondage ne peut pas être réutilisée.")
+        ));
+      }
+
       function saveSurveyStage(stage, values, retriedAfterSessionConflict) {
         var survey = activeSurvey();
         if (!survey) return Promise.reject(new Error("Le parcours de test doit être repris depuis la sortie."));
@@ -2614,7 +2625,10 @@
           // A stale browser tab can hold a survey UUID that belongs to a
           // different event on the server. Replace it once and transparently
           // resend this stage rather than blocking the visitor.
-          if (!retriedAfterSessionConflict && error && error.code === "survey-session-conflict") {
+          if (!retriedAfterSessionConflict && isSurveySessionConflict(error)) {
+            // The collision is limited to anonymous analytics. Preserve the
+            // existing server record, generate a fresh browser ID and retry
+            // the exact same stage once without showing an error to the user.
             survey.sessionId = createSurveySessionId(survey.eventId, true);
             return saveSurveyStage(stage, values, true);
           }
