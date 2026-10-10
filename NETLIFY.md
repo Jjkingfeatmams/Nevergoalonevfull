@@ -69,6 +69,27 @@ personne autorise l’envoi de son e-mail et de ses quatre réponses de test ver
 Google Form dédié. L’URL par défaut pointe vers le formulaire fourni pour cette
 version.
 
+Une réponse « Non, ça ne m’intéresse pas » à l’étape de l’offre est aussi
+enregistrée dans ce Google Form, même si la personne ne poursuit pas le
+parcours. Comme le formulaire impose un champ e-mail et un choix de formule,
+la Function utilise alors une adresse technique aléatoire, non délivrable et
+se terminant par `@never-go-alone.invalid`, ainsi que l’option de formule
+indiquant que la personne n’utiliserait pas l’application. Cette adresse ne
+correspond jamais à un e-mail réel et ne permet pas d’identifier la personne.
+Dans ce cas, aucun profil, nom, prénom, e-mail réel ou autre donnée personnelle
+n’est envoyé à Google.
+
+Dans les réponses Google Forms, le nombre de refus peut donc être obtenu en
+filtrant la colonne e-mail sur `@never-go-alone.invalid`, puis la réponse
+« Non, ça ne m’intéresse pas » à la question sur l’utilité du service. Une
+même session de test, dans le même onglet, réutilise le même identifiant après
+un retour ou une actualisation ; le bouton est aussi verrouillé pendant
+l’envoi. Cela évite les doublons usuels. Si Google Forms est momentanément
+indisponible, le refus reste enregistré anonymement dans Netlify et pourra être
+réessayé lors d’un nouveau passage sur cette réponse. Les réponses avec un
+e-mail réel restent exclusivement celles pour lesquelles la personne a donné
+son consentement distinct.
+
 L’envoi est effectué par la Function Netlify, et non par le navigateur, afin
 d’éviter les blocages CORS de Google Forms. En cas d’indisponibilité de Google,
 le profil est quand même ajouté au groupe ; aucun échec de formulaire externe

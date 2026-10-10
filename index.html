@@ -2521,7 +2521,9 @@
           "</div></section>";
       }
 
-      function createSurveySessionId() {
+      var surveySessionStoragePrefix = "never-go-alone:survey-session:";
+
+      function randomSurveySessionId() {
         if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
         var bytes = new Uint8Array(16);
         if (window.crypto && typeof window.crypto.getRandomValues === "function") window.crypto.getRandomValues(bytes);
@@ -2530,6 +2532,22 @@
         bytes[8] = (bytes[8] & 63) | 128;
         var hex = Array.prototype.map.call(bytes, function (byte) { return byte.toString(16).padStart(2, "0"); }).join("");
         return hex.slice(0, 8) + "-" + hex.slice(8, 12) + "-" + hex.slice(12, 16) + "-" + hex.slice(16, 20) + "-" + hex.slice(20);
+      }
+
+      function createSurveySessionId(eventId) {
+        var storageKey = surveySessionStoragePrefix + String(eventId || "");
+        var uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        try {
+          var previous = sessionStorage.getItem(storageKey);
+          if (uuidPattern.test(previous || "")) return previous;
+          var created = randomSurveySessionId();
+          sessionStorage.setItem(storageKey, created);
+          return created;
+        } catch (error) {
+          // Storage can be disabled in private browsing. The server still
+          // prevents repeated delivery for a session it has already received.
+          return randomSurveySessionId();
+        }
       }
 
       function activeSurvey() {
@@ -2542,7 +2560,7 @@
         var survey = activeSurvey();
         if (!survey || survey.completed) {
           state.survey = {
-            sessionId: createSurveySessionId(),
+            sessionId: createSurveySessionId(event.id),
             eventId: event.id,
             situation: "",
             offerUseful: "",
@@ -2608,11 +2626,16 @@
           "<form id='survey-offer-form' class='survey-card' novalidate><p class='survey-question'>" + esc(i18n("Est-ce que ce service te serait utile ?", "Would this service be useful to you?")) + "</p>" +
           surveyOption("survey-offer-useful", "yes", i18n("Oui, ça m’intéresse", "Yes, I’m interested"), survey.offerUseful) +
           surveyOption("survey-offer-useful", "no", i18n("Non, ça ne m’intéresse pas", "No, I’m not interested"), survey.offerUseful) +
-          "<p class='survey-privacy-note'>" + esc(i18n("Ta réponse reste séparée du profil de groupe. Elle sert uniquement à analyser le prototype de façon anonyme.", "Your answer stays separate from your group profile. It is only used to analyse this prototype anonymously.")) + "</p><p id='survey-feedback' class='feedback' role='status' aria-live='polite'></p><button type='submit' class='primary coral'>" + esc(i18n("Continuer", "Continue")) + "</button></form></div></section>";
+          "<p class='survey-privacy-note'>" + esc(i18n("Ta réponse reste séparée du profil de groupe. Si tu réponds non, elle est comptabilisée anonymement dans le formulaire de test : aucun e-mail, nom ou profil n’est transmis.", "Your answer stays separate from your group profile. If you answer no, it is counted anonymously in the test form: no email, name or profile is sent.")) + "</p><p id='survey-feedback' class='feedback' role='status' aria-live='polite'></p><button type='submit' class='primary coral'" + (state.surveyStatus === "saving-offer" ? " disabled" : "") + ">" + esc(state.surveyStatus === "saving-offer" ? i18n("Envoi…", "Sending…") : i18n("Continuer", "Continue")) + "</button></form></div></section>";
       }
 
       function offerThanksPage() {
-        return "<section class='view'>" + homeHeader(i18n("Merci", "Thank you")) + "<div class='scroll'><div class='empty'><h2>" + esc(i18n("Merci pour ton retour. ✨", "Thanks for your feedback. ✨")) + "</h2><p>" + esc(i18n("Ta réponse anonyme est enregistrée. Elle nous aide à vérifier si Never Go Alone répond à un vrai besoin.", "Your anonymous response is saved. It helps us check whether Never Go Alone meets a real need.")) + "</p><button type='button' class='primary' data-action='explore'>" + esc(i18n("Retour aux sorties", "Back to events")) + "</button></div></div></section>";
+        var survey = activeSurvey();
+        var sentToGoogleForm = survey && survey.declineGoogleFormStatus === "sent";
+        var thanksText = sentToGoogleForm
+          ? i18n("Ta réponse anonyme est comptabilisée dans le formulaire de test, sans partager ton e-mail ni ton profil. Elle nous aide à vérifier si Never Go Alone répond à un vrai besoin.", "Your anonymous response is counted in the test form without sharing your email or profile. It helps us check whether Never Go Alone meets a real need.")
+          : i18n("Ta réponse anonyme est bien enregistrée, sans partager ton e-mail ni ton profil. Elle nous aide à vérifier si Never Go Alone répond à un vrai besoin.", "Your anonymous response has been saved without sharing your email or profile. It helps us check whether Never Go Alone meets a real need.");
+        return "<section class='view'>" + homeHeader(i18n("Merci", "Thank you")) + "<div class='scroll'><div class='empty'><h2>" + esc(i18n("Merci pour ton retour. ✨", "Thanks for your feedback. ✨")) + "</h2><p>" + esc(thanksText) + "</p><button type='button' class='primary' data-action='explore'>" + esc(i18n("Retour aux sorties", "Back to events")) + "</button></div></div></section>";
       }
 
       function joinPage() {
@@ -3084,14 +3107,19 @@
       async function submitSurveyOffer() {
         var offerUseful = joinCheckedValue("survey-offer-useful");
         var survey = activeSurvey();
+        if (state.surveyStatus === "saving-offer") return;
         if (!survey || !survey.situation || !offerUseful) {
           surveyFeedback("Choisis une réponse pour continuer.");
           return;
         }
         survey.offerUseful = offerUseful;
+        state.surveyStatus = "saving-offer";
         surveyFeedback("Enregistrement de ta réponse anonyme…");
+        var submitButton = app.querySelector("#survey-offer-form button[type='submit']");
+        if (submitButton) submitButton.disabled = true;
         try {
-          await saveSurveyStage("offer");
+          var response = await saveSurveyStage("offer");
+          survey.declineGoogleFormStatus = response && response.declineGoogleFormStatus ? response.declineGoogleFormStatus : "unavailable";
           state.surveyStatus = "";
           if (offerUseful === "yes") navigate("join");
           else {
@@ -3102,6 +3130,8 @@
           }
         } catch (error) {
           surveyFeedback(error && error.message ? error.message : "Impossible d’enregistrer cette réponse pour le moment.");
+          state.surveyStatus = "";
+          if (submitButton) submitButton.disabled = false;
         }
       }
 

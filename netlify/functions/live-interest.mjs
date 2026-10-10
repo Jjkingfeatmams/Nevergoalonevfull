@@ -18,6 +18,8 @@ const GENDERS = new Set(["woman", "man", "unspecified"]);
 // receives a consenting visitor's e-mail together with their survey answers.
 const CONTACT_SURVEY_FORM_RESPONSE_URL = process.env.NEVER_GO_ALONE_CONTACT_FORM_RESPONSE_URL || "https://docs.google.com/forms/d/e/1FAIpQLSf51Y4uCxD4KDSdK-lxJmK4ZQREWskSfsKgjGDiHo4wDOexQw/formResponse";
 const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v1";
+const ANONYMOUS_DECLINE_FORM_VERSION = "dedicated-decline-v1";
+const ANONYMOUS_DECLINE_NOTE = "Réponse anonyme — parcours arrêté après la question d’intérêt.";
 const SITUATION_TARGETS = new Map([
   ["drop", true],
   ["unenthusiastic", true],
@@ -158,12 +160,17 @@ function optionalSurveySessionId(value) {
   }
 }
 
-async function submitConsentedContactSurvey(email, survey) {
+async function submitDedicatedSurveyResponse(email, survey) {
+  const situation = CONTACT_FORM_SITUATIONS.get(survey.situation);
+  const offerUseful = CONTACT_FORM_OFFER_USEFUL.get(survey.offerUseful);
+  const subscriptionPreference = CONTACT_FORM_PREFERENCES.get(survey.subscriptionPreference);
+  if (!situation || !offerUseful || !subscriptionPreference) return false;
+
   const body = new URLSearchParams({
     "entry.2059906264": email,
-    "entry.725885935": CONTACT_FORM_SITUATIONS.get(survey.situation),
-    "entry.2046482610": CONTACT_FORM_OFFER_USEFUL.get(survey.offerUseful),
-    "entry.1936886010": CONTACT_FORM_PREFERENCES.get(survey.subscriptionPreference),
+    "entry.725885935": situation,
+    "entry.2046482610": offerUseful,
+    "entry.1936886010": subscriptionPreference,
     "entry.825396935": survey.subscriptionFeedback || ""
   });
 
@@ -178,6 +185,28 @@ async function submitConsentedContactSurvey(email, survey) {
   } catch {
     return false;
   }
+}
+
+async function submitConsentedContactSurvey(email, survey) {
+  return submitDedicatedSurveyResponse(email, survey);
+}
+
+function anonymousDeclineEmail(sessionId) {
+  // The supplied Google Form requires an e-mail field. This reserved,
+  // non-deliverable technical address lets us count a decline without ever
+  // exporting a visitor's real e-mail or profile data.
+  return "anonymous-no-" + hmacHex("google-form-decline:" + sessionId).slice(0, 24) + "@never-go-alone.invalid";
+}
+
+async function submitAnonymousDeclineSurvey(survey) {
+  return submitDedicatedSurveyResponse(anonymousDeclineEmail(survey.id), {
+    situation: survey.situation,
+    offerUseful: "no",
+    // A person who stops at the offer stage has not evaluated pricing. This
+    // required Google Form answer is a technical marker, not a real choice.
+    subscriptionPreference: "no",
+    subscriptionFeedback: ANONYMOUS_DECLINE_NOTE
+  });
 }
 
 function isGender(value) {
@@ -272,6 +301,8 @@ function validSurveyRecord(record) {
     (record.offerUseful === null || OFFER_USEFUL_RESPONSES.has(record.offerUseful)) &&
     (record.subscriptionPreference === null || SUBSCRIPTION_PREFERENCES.has(record.subscriptionPreference)) &&
     typeof record.subscriptionFeedback === "string" &&
+    (!Object.hasOwn(record, "declineGoogleFormSubmitted") || typeof record.declineGoogleFormSubmitted === "boolean") &&
+    (!Object.hasOwn(record, "declineGoogleFormVersion") || typeof record.declineGoogleFormVersion === "string") &&
     typeof record.createdAt === "string" &&
     typeof record.updatedAt === "string";
 }
@@ -382,6 +413,10 @@ async function saveSurveySession(request) {
     offerUseful,
     subscriptionPreference,
     subscriptionFeedback,
+    declineGoogleFormSubmitted: validSurveyRecord(existing) && existing.declineGoogleFormSubmitted === true,
+    declineGoogleFormVersion: validSurveyRecord(existing) && typeof existing.declineGoogleFormVersion === "string"
+      ? existing.declineGoogleFormVersion
+      : "",
     progress: stage === "pricing" ? "completed" : offerUseful === "no" ? "declined" : stage,
     createdAt: validSurveyRecord(existing) ? existing.createdAt : now,
     updatedAt: now,
@@ -391,7 +426,33 @@ async function saveSurveySession(request) {
   // This record deliberately has no name, e-mail, profile id, IP address or
   // other personal field. It is not read by any public group endpoint.
   await store.setJSON(key, record);
-  return json({ accepted: true });
+
+  // A "no" ends the user journey, but it still matters in the launch test.
+  // The dedicated Google Form has mandatory e-mail and pricing fields, so we
+  // submit harmless technical values rather than any personal data. Its real
+  // count is the offerUseful=no choice; the pricing marker is never treated
+  // as a preference in the anonymous Netlify survey.
+  let declineGoogleFormStatus = "not-applicable";
+  if (stage === "offer" && offerUseful === "no") {
+    const alreadySent = record.declineGoogleFormSubmitted === true &&
+      record.declineGoogleFormVersion === ANONYMOUS_DECLINE_FORM_VERSION;
+    declineGoogleFormStatus = alreadySent ? "sent" : "unavailable";
+    if (!alreadySent) {
+      try {
+        if (await submitAnonymousDeclineSurvey(record)) {
+          record.declineGoogleFormSubmitted = true;
+          record.declineGoogleFormVersion = ANONYMOUS_DECLINE_FORM_VERSION;
+          record.updatedAt = new Date().toISOString();
+          await store.setJSON(key, record);
+          declineGoogleFormStatus = "sent";
+        }
+      } catch {
+        // The anonymous record remains available in Netlify even if Google
+        // Forms is temporarily unavailable. Do not block the thank-you page.
+      }
+    }
+  }
+  return json({ accepted: true, declineGoogleFormStatus });
 }
 
 function emptySurveySegment() {
