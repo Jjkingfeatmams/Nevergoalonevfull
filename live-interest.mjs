@@ -17,8 +17,8 @@ const GENDERS = new Set(["woman", "man", "unspecified"]);
 // point to an older form with different questions. Only this dedicated form
 // receives a consenting visitor's e-mail together with their survey answers.
 const CONTACT_SURVEY_FORM_RESPONSE_URL = process.env.NEVER_GO_ALONE_CONTACT_FORM_RESPONSE_URL || "https://docs.google.com/forms/d/e/1FAIpQLSf51Y4uCxD4KDSdK-lxJmK4ZQREWskSfsKgjGDiHo4wDOexQw/formResponse";
-const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v2";
-const ANONYMOUS_DECLINE_FORM_VERSION = "dedicated-decline-v2";
+const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v4";
+const ANONYMOUS_DECLINE_FORM_VERSION = "dedicated-decline-v3";
 const ANONYMOUS_DECLINE_NOTE = "Réponse anonyme — parcours arrêté après la question d’intérêt.";
 const SITUATION_TARGETS = new Map([
   ["drop", true],
@@ -26,7 +26,10 @@ const SITUATION_TARGETS = new Map([
   ["alone-fine", false]
 ]);
 const OFFER_USEFUL_RESPONSES = new Set(["yes", "no"]);
-const SUBSCRIPTION_PREFERENCES = new Set(["monthly", "quarterly", "per-event", "no"]);
+// "lower-monthly" is retained only so answers collected by the immediately
+// previous test version remain readable in the anonymous aggregate.
+const SUBSCRIPTION_PREFERENCES = new Set(["monthly", "lower-monthly", "quarterly", "per-event", "no"]);
+const SUBSCRIPTION_PRICE_OPINIONS = new Set(["fair", "lower", "too-expensive"]);
 const CONTACT_FORM_SITUATIONS = new Map([
   ["drop", "Je laisse tomber"],
   ["unenthusiastic", "J'y vais quand même, mais sans grand enthousiasme"],
@@ -37,10 +40,15 @@ const CONTACT_FORM_OFFER_USEFUL = new Map([
   ["no", "Non, ça ne m’intéresse pas"]
 ]);
 const CONTACT_FORM_PREFERENCES = new Map([
-  ["monthly", "2,99 € par mois. Un accès aux tarifs de groupe sans frais de service"],
-  ["quarterly", "7,99 € par trimestre. Environ 2,66 € par mois, sans frais de service, avec un engagement de trois mois"],
-  ["per-event", "Payer seulement à l’événement. Tu paies le tarif de groupe plus des frais de service égaux à 50 % de la remise, plafonnés à 2,99 € par sortie"],
-  ["no", "Je ne paierais pas d’abonnement"]
+  ["monthly", "5,00 € par mois. Un accès aux tarifs de groupe sans frais de service"],
+  ["quarterly", "12,00 € par trimestre. Environ 4,00 € par mois, sans frais de service, avec un engagement de trois mois"],
+  ["per-event", "Payer seulement à l’événement. Tu paies le tarif de groupe plus 50% de la remise de frais de service à chaque sortie"],
+  ["no", "Je n’utiliserais pas l’application avec ce modèle. Cette proposition ne me conviendrait pas."]
+]);
+const CONTACT_FORM_PRICE_OPINIONS = new Map([
+  ["fair", "5 € par mois, c'est un prix qui me convient"],
+  ["lower", "5 € par mois, c'est trop cher, mais je serais prêt(e) à payer 2,99 € par mois"],
+  ["too-expensive", "Même 2,99 € par mois, ce serait trop cher pour moi et je privilégierais la formule sans abonnement"]
 ]);
 const SURVEY_STAGES = new Set(["situation", "offer", "pricing"]);
 const SURVEY_PAYLOAD_KEYS = new Set([
@@ -50,6 +58,7 @@ const SURVEY_PAYLOAD_KEYS = new Set([
   "situation",
   "offerUseful",
   "subscriptionPreference",
+  "subscriptionPriceOpinion",
   "subscriptionFeedback"
 ]);
 const submissionWindows = new Map();
@@ -147,7 +156,8 @@ function completedSurveyForEvent(record, eventId) {
     record.offerUseful === "yes" &&
     CONTACT_FORM_SITUATIONS.has(record.situation) &&
     CONTACT_FORM_OFFER_USEFUL.has(record.offerUseful) &&
-    CONTACT_FORM_PREFERENCES.has(record.subscriptionPreference);
+    CONTACT_FORM_PREFERENCES.has(record.subscriptionPreference) &&
+    CONTACT_FORM_PRICE_OPINIONS.has(record.subscriptionPriceOpinion);
 }
 
 function optionalSurveySessionId(value) {
@@ -165,14 +175,17 @@ async function submitDedicatedSurveyResponse(email, survey) {
   const situation = CONTACT_FORM_SITUATIONS.get(survey.situation);
   const offerUseful = CONTACT_FORM_OFFER_USEFUL.get(survey.offerUseful);
   const subscriptionPreference = CONTACT_FORM_PREFERENCES.get(survey.subscriptionPreference);
-  if (!situation || !offerUseful || !subscriptionPreference) return false;
+  const subscriptionPriceOpinion = survey.subscriptionPriceOpinion
+    ? CONTACT_FORM_PRICE_OPINIONS.get(survey.subscriptionPriceOpinion)
+    : "";
+  if (!situation || !offerUseful || !subscriptionPreference || (survey.offerUseful === "yes" && !subscriptionPriceOpinion)) return false;
 
   const body = new URLSearchParams({
     "entry.2059906264": email,
     "entry.725885935": situation,
     "entry.2046482610": offerUseful,
     "entry.1936886010": subscriptionPreference,
-    "entry.825396935": survey.subscriptionFeedback || ""
+    "entry.825396935": subscriptionPriceOpinion
   });
 
   try {
@@ -206,6 +219,7 @@ async function submitAnonymousDeclineSurvey(survey) {
     // A person who stops at the offer stage has not evaluated pricing. This
     // required Google Form answer is a technical marker, not a real choice.
     subscriptionPreference: "no",
+    subscriptionPriceOpinion: "",
     subscriptionFeedback: ANONYMOUS_DECLINE_NOTE
   });
 }
@@ -301,6 +315,7 @@ function validSurveyRecord(record) {
     typeof record.cible === "boolean" &&
     (record.offerUseful === null || OFFER_USEFUL_RESPONSES.has(record.offerUseful)) &&
     (record.subscriptionPreference === null || SUBSCRIPTION_PREFERENCES.has(record.subscriptionPreference)) &&
+    (!Object.hasOwn(record, "subscriptionPriceOpinion") || record.subscriptionPriceOpinion === null || SUBSCRIPTION_PRICE_OPINIONS.has(record.subscriptionPriceOpinion)) &&
     typeof record.subscriptionFeedback === "string" &&
     (!Object.hasOwn(record, "declineGoogleFormSubmitted") || typeof record.declineGoogleFormSubmitted === "boolean") &&
     (!Object.hasOwn(record, "declineGoogleFormVersion") || typeof record.declineGoogleFormVersion === "string") &&
@@ -378,6 +393,7 @@ async function saveSurveySession(request) {
   const cible = SITUATION_TARGETS.get(situation);
   let offerUseful = null;
   let subscriptionPreference = null;
+  let subscriptionPriceOpinion = null;
   let subscriptionFeedback = "";
 
   if (stage === "offer" || stage === "pricing") {
@@ -389,11 +405,7 @@ async function saveSurveySession(request) {
       throw new HttpError(400, "La formule tarifaire ne peut être évaluée qu’après un oui à l’offre.");
     }
     subscriptionPreference = surveyChoice(payload.subscriptionPreference, SUBSCRIPTION_PREFERENCES, "Préférence d’abonnement");
-    subscriptionFeedback = cleanOptionalPublicText(
-      payload.subscriptionFeedback,
-      MAX_SUBSCRIPTION_FEEDBACK_LENGTH,
-      "Commentaire sur la formule"
-    ).value;
+    subscriptionPriceOpinion = surveyChoice(payload.subscriptionPriceOpinion, SUBSCRIPTION_PRICE_OPINIONS, "Avis sur le prix mensuel");
   }
 
   const store = interestStore();
@@ -413,6 +425,7 @@ async function saveSurveySession(request) {
     cible,
     offerUseful,
     subscriptionPreference,
+    subscriptionPriceOpinion,
     subscriptionFeedback,
     declineGoogleFormSubmitted: validSurveyRecord(existing) && existing.declineGoogleFormSubmitted === true,
     declineGoogleFormVersion: validSurveyRecord(existing) && typeof existing.declineGoogleFormVersion === "string"
@@ -460,7 +473,8 @@ function emptySurveySegment() {
   return {
     sessions: 0,
     offerUseful: { yes: 0, no: 0, pending: 0 },
-    subscriptionPreference: { monthly: 0, quarterly: 0, "per-event": 0, no: 0, pending: 0 }
+    subscriptionPreference: { monthly: 0, "lower-monthly": 0, quarterly: 0, "per-event": 0, no: 0, pending: 0 },
+    subscriptionPriceOpinion: { fair: 0, lower: 0, "too-expensive": 0, pending: 0 }
   };
 }
 
@@ -473,6 +487,11 @@ function addSurveyToSegment(segment, record) {
     segment.subscriptionPreference[record.subscriptionPreference] += 1;
   } else {
     segment.subscriptionPreference.pending += 1;
+  }
+  if (record.subscriptionPriceOpinion && Object.hasOwn(segment.subscriptionPriceOpinion, record.subscriptionPriceOpinion)) {
+    segment.subscriptionPriceOpinion[record.subscriptionPriceOpinion] += 1;
+  } else {
+    segment.subscriptionPriceOpinion.pending += 1;
   }
 }
 

@@ -1351,9 +1351,9 @@
       var TARIFICATION = Object.freeze({
         REMISE_GROUPE: 0.10,
         PART_REMISE_FRAIS: 0.5,
-        PRIX_ABONNEMENT_MENSUEL: 2.99,
-        PRIX_ABONNEMENT_TRIMESTRIEL: 7.99,
-        // Plafond indépendant, fixé par défaut au prix mensuel.
+        PRIX_ABONNEMENT_MENSUEL: 5,
+        PRIX_ABONNEMENT_TRIMESTRIEL: 12,
+        // Plafond indépendant du prix de l’abonnement.
         FRAIS_MAX: 2.99
       });
 
@@ -2638,7 +2638,7 @@
         if (stage === "offer" || stage === "pricing") body.offerUseful = survey.offerUseful;
         if (stage === "pricing") {
           body.subscriptionPreference = details.subscriptionPreference;
-          body.subscriptionFeedback = details.subscriptionFeedback || "";
+          body.subscriptionPriceOpinion = details.subscriptionPriceOpinion;
         }
         return apiRequest("/api/survey-sessions", {
           method: "POST",
@@ -2789,8 +2789,11 @@
           "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='monthly' required><span><b>" + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL)) + " " + esc(i18n("par mois", "per month")) + "</b><small>" + esc(i18n("Un accès aux tarifs de groupe sans frais de service", "Access to group prices without service fees")) + "</small></span></label>" +
           "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='quarterly'><span><b>" + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_TRIMESTRIEL)) + " " + esc(i18n("par trimestre", "per quarter")) + "</b><small>" + esc(i18n("Environ " + quarterlyMonthlyEquivalent + " par mois, sans frais de service, avec un engagement de trois mois", "Around " + quarterlyMonthlyEquivalent + " per month, no service fees, with a three-month commitment")) + "</small></span></label>" +
           "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='per-event'><span><b>" + esc(i18n("Payer seulement à l’événement", "Pay per event")) + "</b><small>" + esc(perEventPlanDescription) + "</small></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='no'><span><b>" + esc(i18n("Je ne paierais pas d’abonnement", "I would not pay for a subscription")) + "</b><small>" + esc(i18n("Cette proposition ne me conviendrait pas.", "This offer would not suit me.")) + "</small></span></label></div>" +
-          "<div class='field'><label for='live-subscription-feedback'>" + esc(i18n("Qu’est-ce qui rendrait cette formule plus intéressante ? (facultatif)", "What would make this plan more appealing? (optional)")) + "</label><textarea id='live-subscription-feedback' name='subscriptionFeedback' maxlength='300' placeholder='" + esc(i18n("Ex. davantage de réductions, plus de sorties chaque semaine…", "E.g. more discounts, more events each week…")) + "'></textarea></div>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='no'><span><b>" + esc(i18n("Je n’utiliserais pas l’application avec ce modèle", "I would not use the app with this model")) + "</b><small>" + esc(i18n("Cette proposition ne me conviendrait pas.", "This offer would not suit me.")) + "</small></span></label></div>" +
+          "<div class='field'><label>" + esc(i18n("Que penses-tu du prix de l’abonnement à " + formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL) + " par mois ?", "What do you think about a " + formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL) + " monthly subscription?")) + "</label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-price-opinion' value='fair' required><span><b>" + esc(i18n(formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL) + " par mois, c’est un prix qui me convient", formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL) + " per month feels right to me")) + "</b></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-price-opinion' value='lower'><span><b>" + esc(i18n(formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL) + " par mois, c’est trop cher, mais je serais prêt(e) à payer 2,99 € par mois", formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL) + " per month is too expensive, but I would be willing to pay €2.99 per month")) + "</b></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-price-opinion' value='too-expensive'><span><b>" + esc(i18n("Même 2,99 € par mois, ce serait trop cher pour moi et je privilégierais la formule sans abonnement", "Even €2.99 per month would be too expensive; I would prefer the no-subscription option")) + "</b></span></label></div>" +
           "<p class='subscription-disclaimer'>" + esc(i18n("Test uniquement : aucune carte bancaire, aucun paiement et aucun engagement ne sont demandés. Les montants, événements et données présentés sont fictifs. Ta réponse est privée et n’apparaît jamais dans le groupe.", "Test only: no bank card, payment or commitment is requested. The amounts, events and data shown are fictional. Your answer is private and never appears in the group.")) + "</p></section>" +
           "<section class='survey-card profile-summary-card'><h2>👤 " + esc(i18n("Ton profil est prêt", "Your profile is ready")) + "</h2><p>" + esc(i18n("Tu ne remplis aucune information personnelle une seconde fois.", "You do not fill in any personal details a second time.")) + "</p><p class='profile-summary-line'>" + esc(profileLine) + "</p><p class='tiny'>" + esc(i18n("Ce sont ces informations qui seront utilisées pour ton profil dans le groupe après ton accord ci-dessous. Ton nom complet et ton e-mail restent privés.", "These are the details that will be used for your group profile after your consent below. Your full name and email remain private.")) + "</p></section>" +
           "<p class='tiny'>🪪 " + esc(i18n("Au lancement, les profils seront vérifiés avec une pièce d’identité. Ce prototype ne demande aucun document.", "At launch, profiles will be verified with government-issued ID. This prototype asks for no document.")) + "</p>" +
@@ -3265,7 +3268,7 @@
         var passions = personal.passions;
         var gender = personal.gender || "unspecified";
         var subscriptionPreference = joinCheckedValue("live-subscription-preference");
-        var subscriptionFeedback = joinFieldValue("live-subscription-feedback");
+        var subscriptionPriceOpinion = joinCheckedValue("live-subscription-price-opinion");
         var website = joinFieldValue("live-website");
         var adult = !!(app.querySelector("#live-adult") || {}).checked;
         var publicConsent = !!(app.querySelector("#live-public-consent") || {}).checked;
@@ -3279,8 +3282,8 @@
           setJoinFeedback(i18n("Reprends le parcours depuis la première étape avant d’ajouter ton profil.", "Restart the journey from step one before adding your profile."));
           return;
         }
-        if (!subscriptionPreference) {
-          setJoinFeedback(i18n("Choisis la formule qui te correspond le mieux.", "Choose the plan that suits you best."));
+        if (!subscriptionPreference || !subscriptionPriceOpinion) {
+          setJoinFeedback(i18n("Choisis une formule et donne ton avis sur le prix mensuel.", "Choose a plan and tell us what you think about the monthly price."));
           return;
         }
         if (!adult || !publicConsent) {
@@ -3296,7 +3299,7 @@
         try {
           await saveSurveyStage("pricing", {
             subscriptionPreference: subscriptionPreference,
-            subscriptionFeedback: subscriptionFeedback
+            subscriptionPriceOpinion: subscriptionPriceOpinion
           });
           var payload = await apiRequest("/api/interests", {
             method: "POST",

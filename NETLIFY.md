@@ -13,8 +13,8 @@ Les prix de l’interface proviennent d’une configuration unique dans
 - remise groupe : 10 % du plein tarif ;
 - frais sans abonnement : 50 % de cette remise, arrondis au centime ;
 - plafond des frais : 2,99 € par sortie ;
-- abonnement mensuel : 2,99 € ;
-- abonnement trimestriel : 7,99 €.
+- abonnement mensuel : 5 € ;
+- abonnement trimestriel : 12 €.
 
 Ainsi, dès qu’il existe une remise, le total sans abonnement reste strictement
 inférieur au plein tarif. Avec l’abonnement, les frais de service sont nuls.
@@ -42,7 +42,7 @@ Le parcours tarifaire enregistre, avec un identifiant de session aléatoire :
 - l’indicateur interne `cible`, dérivé côté serveur ;
 - l’intérêt pour l’offre ;
 - la formule choisie ;
-- le commentaire facultatif.
+- l’avis sur le prix mensuel de 5 €.
 
 Ce sondage ne comporte ni nom, ni e-mail, ni identifiant de profil, ni donnée
 personnelle. Il est stocké séparément sous `survey/` et n’est jamais lu par les
@@ -82,15 +82,15 @@ renvoyer les réponses brutes ni les commentaires.
 Le parcours conserve son interface intégrée : aucun Google Form n’est affiché
 dans l’application. Avec son consentement **facultatif et distinct**, la
 personne autorise l’envoi de son e-mail et de ses quatre réponses de test vers le
-Google Form dédié. L’URL par défaut pointe vers le formulaire fourni pour cette
-version.
+Google Form dédié. L’URL par défaut pointe vers le [formulaire de test à 5 €](https://forms.gle/NoDpMuuNKEQeeRvd7)
+fourni pour cette version.
 
 Une réponse « Non, ça ne m’intéresse pas » à l’étape de l’offre est aussi
 enregistrée dans ce Google Form, même si la personne ne poursuit pas le
 parcours. Comme le formulaire impose un champ e-mail et un choix de formule,
 la Function utilise alors une adresse technique aléatoire, non délivrable et
-se terminant par `@never-go-alone.invalid`, ainsi que l’option « Je ne
-paierais pas d’abonnement ». Cette adresse ne
+se terminant par `@never-go-alone.invalid`, ainsi que l’option indiquant que
+la personne n’utiliserait pas l’application avec ce modèle. Cette adresse ne
 correspond jamais à un e-mail réel et ne permet pas d’identifier la personne.
 Dans ce cas, aucun profil, nom, prénom, e-mail réel ou autre donnée personnelle
 n’est envoyé à Google.
@@ -117,13 +117,19 @@ d’environnement `NEVER_GO_ALONE_CONTACT_FORM_RESPONSE_URL` avec son endpoint
 choix dans `netlify/functions/live-interest.mjs`. L’ancienne variable
 `GOOGLE_FORM_RESPONSE_URL` n’est volontairement pas utilisée.
 
-Le Google Form dédié doit aussi conserver ces quatre choix pour la question
-sur la formule, afin que ses réponses correspondent exactement à l’interface :
+Le Google Form dédié fourni à cette version contient les quatre choix suivants
+pour la formule :
 
-- « 2,99 € par mois. Un accès aux tarifs de groupe sans frais de service » ;
-- « 7,99 € par trimestre. Environ 2,66 € par mois, sans frais de service, avec un engagement de trois mois » ;
-- « Payer seulement à l’événement. Tu paies le tarif de groupe plus des frais de service égaux à 50 % de la remise, plafonnés à 2,99 € par sortie » ;
-- « Je ne paierais pas d’abonnement ».
+- « 5,00 € par mois. Un accès aux tarifs de groupe sans frais de service » ;
+- « 12,00 € par trimestre. Environ 4,00 € par mois, sans frais de service, avec un engagement de trois mois » ;
+- « Payer seulement à l’événement. Tu paies le tarif de groupe plus 50% de la remise de frais de service à chaque sortie » ;
+- « Je n’utiliserais pas l’application avec ce modèle. Cette proposition ne me conviendrait pas. »
+
+Il comporte aussi une question distincte sur le prix mensuel de 5 €, avec les
+réponses « 5 € par mois, c'est un prix qui me convient », « 5 € par mois,
+c'est trop cher, mais je serais prêt(e) à payer 2,99 € par mois » et « Même
+2,99 € par mois, ce serait trop cher pour moi et je privilégierais la formule
+sans abonnement ».
 
 Le Google Form actuel ne comporte pas de champs de profil. Les informations
 publiées dans le groupe restent donc stockées séparément dans Netlify Blobs et
