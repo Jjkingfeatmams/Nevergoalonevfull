@@ -1352,9 +1352,7 @@
         REMISE_GROUPE: 0.10,
         PART_REMISE_FRAIS: 0.5,
         PRIX_ABONNEMENT_MENSUEL: 5,
-        PRIX_ABONNEMENT_TRIMESTRIEL: 12,
-        // Plafond indépendant du prix de l’abonnement.
-        FRAIS_MAX: 2.99
+        PRIX_ABONNEMENT_TRIMESTRIEL: 12
       });
 
       // Les événements, tarifs et tailles de groupes ci-dessous sont des
@@ -1562,13 +1560,11 @@
         if (!remiseCentimes) return 0;
 
         var fraisTheoriquesCentimes = Math.round(remiseCentimes * TARIFICATION.PART_REMISE_FRAIS);
-        var plafondCentimes = Math.round(TARIFICATION.FRAIS_MAX * 100);
-        // Le dernier plafond d'un centime garantit que le total sans
-        // abonnement est strictement inférieur au plein tarif si la remise
-        // est positive (cas limite d'une remise d'un centime inclus).
+        // Ce garde-fou d'un centime garantit que le total sans abonnement
+        // reste strictement inférieur au plein tarif si la remise est
+        // positive, y compris dans le cas limite d'une remise d'un centime.
         var fraisCentimes = Math.min(
           fraisTheoriquesCentimes,
-          plafondCentimes,
           Math.max(0, remiseCentimes - 1)
         );
         return fraisCentimes / 100;
@@ -2464,8 +2460,8 @@
         var saving = remiseGroupe(event);
         var priceExplanation = saving > 0
           ? i18n(
-            "de remise groupe simulée. Sans abonnement, les frais correspondent à " + Math.round(TARIFICATION.PART_REMISE_FRAIS * 100) + " % de cette remise et ne dépassent jamais " + formatEuro(TARIFICATION.FRAIS_MAX) + " par sortie. Le total est affiché clairement avant de signaler ton intérêt.",
-            "of simulated group discount. Without a subscription, service fees are " + Math.round(TARIFICATION.PART_REMISE_FRAIS * 100) + "% of this saving and never exceed " + formatEuro(TARIFICATION.FRAIS_MAX) + " per event. The total is clearly shown before you register your interest."
+            "de remise groupe simulée. Sans abonnement, les frais correspondent à " + Math.round(TARIFICATION.PART_REMISE_FRAIS * 100) + " % de cette remise.",
+            "of simulated group discount. Without a subscription, service fees are " + Math.round(TARIFICATION.PART_REMISE_FRAIS * 100) + "% of this saving."
           )
           : i18n(
             "de remise groupe simulée. Le prix est alors identique au plein tarif : ce qui change est de partir en groupe.",
@@ -2714,16 +2710,14 @@
         var groupSaving = remiseGroupe(event);
         var tripsToBreakEven = sortiesPourRentabiliser(publicPrice, groupPrice);
         var feePercentage = Math.round(TARIFICATION.PART_REMISE_FRAIS * 100);
-        var uncappedServiceFee = arrondirEuro(groupSaving * TARIFICATION.PART_REMISE_FRAIS);
-        var serviceFeeIsCapped = serviceFee === TARIFICATION.FRAIS_MAX && uncappedServiceFee > serviceFee;
         var noSubscriptionNote;
         if (groupSaving > 0 && serviceFee > 0) {
           noSubscriptionNote = i18n(
             "Sans abonnement, tu paies moins qu’en y allant seul(e) : les frais de service " +
-              (serviceFeeIsCapped ? "sont calculés à " + feePercentage + " % de la remise puis plafonnés" : "représentent " + feePercentage + " % de la remise") +
+              "représentent " + feePercentage + " % de la remise" +
               ". Avec l’abonnement, tu gardes toute l’économie.",
             "Without a subscription, you pay less than going alone: service fees " +
-              (serviceFeeIsCapped ? "are calculated at " + feePercentage + "% of the saving then capped" : "represent " + feePercentage + "% of the saving") +
+              "represent " + feePercentage + "% of the saving" +
               ". With a subscription, you keep the whole saving."
           );
         } else if (groupSaving > 0) {
@@ -2735,12 +2729,6 @@
           noSubscriptionNote = i18n(
             "Le prix est identique au plein tarif : ce qui change est de partir en groupe.",
             "The price is the same as the full price: what changes is going as a group."
-          );
-        }
-        if (serviceFeeIsCapped) {
-          noSubscriptionNote += " " + i18n(
-            "Les frais de service ne dépassent jamais " + formatEuro(TARIFICATION.FRAIS_MAX) + " par sortie.",
-            "Service fees never exceed " + formatEuro(TARIFICATION.FRAIS_MAX) + " per event."
           );
         }
         var breakEvenNote = "";
@@ -2757,8 +2745,8 @@
         }
         var noSubscriptionDetail = groupSaving > 0
           ? i18n(
-            "Tarif groupe " + formatEuro(groupPrice) + " + frais de service " + formatEuro(serviceFee) + " (" + feePercentage + " % de la remise" + (serviceFeeIsCapped ? ", plafond appliqué" : "") + ")",
-            "Group price " + formatEuro(groupPrice) + " + service fee " + formatEuro(serviceFee) + " (" + feePercentage + "% of the saving" + (serviceFeeIsCapped ? ", cap applied" : "") + ")"
+            "Tarif groupe " + formatEuro(groupPrice) + " + frais de service " + formatEuro(serviceFee) + " (" + feePercentage + " % de la remise)",
+            "Group price " + formatEuro(groupPrice) + " + service fee " + formatEuro(serviceFee) + " (" + feePercentage + "% of the saving)"
           )
           : i18n(
             "Tarif groupe " + formatEuro(groupPrice) + " + 0 € de frais de service",
@@ -2770,8 +2758,8 @@
         );
         var quarterlyMonthlyEquivalent = formatEuro(TARIFICATION.PRIX_ABONNEMENT_TRIMESTRIEL / 3);
         var perEventPlanDescription = i18n(
-          "Tu paies le tarif de groupe plus des frais de service égaux à " + feePercentage + " % de la remise, plafonnés à " + formatEuro(TARIFICATION.FRAIS_MAX) + " par sortie",
-          "You pay the group price plus service fees equal to " + feePercentage + "% of the saving, capped at " + formatEuro(TARIFICATION.FRAIS_MAX) + " per event"
+          "Tu paies le tarif de groupe plus des frais de service égaux à " + feePercentage + " % de la remise à chaque sortie",
+          "You pay the group price plus service fees equal to " + feePercentage + "% of the saving for each event"
         );
         var profileLine = [
           personal.firstName,
