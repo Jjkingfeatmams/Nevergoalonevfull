@@ -12,4 +12,4 @@ await cp(path.join(projectDirectory, "assets"), path.join(publishDirectory, "ass
   force: true
 });
 
-console.log("Never Go Alone V5 abonnement: static files ready for Netlify.");
+console.log("Never Go Alone Prototype: static files ready for Netlify.");
