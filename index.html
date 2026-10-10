@@ -1703,6 +1703,7 @@
         dark: true,
         locale: "fr",
         joinStatus: "",
+        contactFormStatus: "",
         survey: null,
         surveyStatus: ""
       };
@@ -2664,7 +2665,7 @@
           "<div class='honeypot' aria-hidden='true'><label for='live-website'>Website</label><input id='live-website' name='website' tabindex='-1' autocomplete='off'></div>" +
           "<label class='check'><input id='live-adult' type='checkbox' required><span>" + esc(i18n("J’ai au moins 18 ans.", "I am at least 18 years old.")) + "</span></label>" +
           "<label class='check'><input id='live-public-consent' type='checkbox' required><span>" + esc(i18n("J’accepte que mon prénom, mon âge, ma nationalité, mon genre renseigné, mon activité, ma description, mes passions et mon avatar illustré soient visibles sur la fiche de cet événement. Mon nom et mon e-mail ne seront jamais affichés.", "I agree that my first name, age, nationality, chosen gender, occupation, description, passions and illustrated avatar may be visible on this event’s page. My last name and email will never be displayed.")) + "</span></label>" +
-          "<label class='check'><input id='live-contact-consent' type='checkbox'><span>" + esc(i18n("Je souhaite recevoir les nouvelles de Never Go Alone par e-mail (facultatif). Mon e-mail est transmis à l’équipe Never Go Alone, jamais aux organisateurs sans mon accord distinct.", "I would like to receive Never Go Alone updates by email (optional). My email is sent to the Never Go Alone team, never to organisers without my separate consent.")) + "</span></label>" +
+          "<label class='check'><input id='live-contact-consent' type='checkbox'><span>" + esc(i18n("Je souhaite être recontacté(e) au lancement et j’accepte que mon e-mail et mes réponses au sondage soient envoyés au Google Form dédié de Never Go Alone (facultatif). Rien n’est transmis aux organisateurs.", "I would like to be contacted at launch and agree that my email and survey responses are sent to Never Go Alone’s dedicated Google Form (optional). Nothing is sent to organisers.")) + "</span></label>" +
           "<p id='live-join-feedback' class='feedback' role='status' aria-live='polite'></p><div class='live-form-actions'><button type='submit' class='primary coral'" + (waiting ? " disabled" : "") + ">" + esc(waiting ? i18n("Envoi…", "Sending…") : i18n("Envoyer et ajouter mon profil", "Send and add my profile")) + "</button></div></form></div>";
       }
 
@@ -2672,10 +2673,19 @@
         var event = selectedEvent();
         var count = liveCount(event);
         var countNote = i18n("Le groupe compte maintenant " + count + " personne" + (count > 1 ? "s" : "") + " intéressée" + (count > 1 ? "s" : "") + ".", "The group now has " + count + " interested person" + (count > 1 ? "s" : "") + ".");
+        var launchFormNote = state.contactFormStatus === "sent"
+          ? "<div class='success-card'><b>✓ " + esc(i18n("Tes réponses ont aussi été enregistrées dans le Google Form de lancement.", "Your answers were also saved in the launch Google Form.")) + "</b></div>"
+          : state.contactFormStatus === "unavailable"
+            ? "<div class='notice-card'><b>" + esc(i18n("Ton profil a bien été ajouté.", "Your profile was added.")) + "</b><p>" + esc(i18n("Le Google Form de lancement n’a pas pu être confirmé cette fois-ci. Ton inscription au groupe reste enregistrée.", "The launch Google Form could not be confirmed this time. Your group registration is still saved.")) + "</p></div>"
+            : "";
+        var privacyNote = state.contactFormStatus === "sent"
+          ? i18n("Selon ton accord, ton e-mail et tes réponses au sondage ont été transmis au Google Form de lancement. Aucun paiement, aucune carte bancaire et aucun engagement n’ont été demandés aujourd’hui.", "With your consent, your email and survey answers were sent to the launch Google Form. No payment, bank card or commitment was requested today.")
+          : i18n("Ton sondage tarifaire est enregistré anonymement, séparément de ton profil. Aucun paiement, aucune carte bancaire et aucun engagement n’ont été demandés aujourd’hui.", "Your pricing survey is saved anonymously, separately from your profile. No payment, bank card or commitment was requested today.");
         return "<section class='view'>" + homeHeader(i18n("C’est envoyé", "Sent")) + "<div class='scroll'>" +
           "<h1>" + esc(i18n("Ton profil a été ajouté", "Your profile has been added")) + "</h1>" +
           "<div class='success-card'><b>✓ " + esc(i18n("Ton formulaire a été envoyé et ton profil est maintenant visible dans ce groupe live.", "Your form was sent and your profile is now visible in this live group.")) + "</b><p>" + esc(countNote) + "</p></div>" +
-          "<p class='muted'>" + esc(i18n("Merci pour ton retour. Ton sondage tarifaire est enregistré anonymement, séparément de ton profil. Aucun paiement, aucune carte bancaire et aucun engagement n’ont été demandés aujourd’hui.", "Thanks for your feedback. Your pricing survey is saved anonymously, separately from your profile. No payment, bank card or commitment was requested today.")) + "</p>" +
+          launchFormNote +
+          "<p class='muted'>" + esc(i18n("Merci pour ton retour. ", "Thanks for your feedback. ") + privacyNote) + "</p>" +
           "<button type='button' class='primary' data-action='home'>" + esc(i18n("Retourner à l’accueil", "Return to Home")) + "</button>" +
           "<button type='button' class='primary ghost withdraw-button' data-action='withdraw'>" + esc(i18n("Retirer mon intérêt", "Remove my interest")) + "</button>" +
           "<p id='withdraw-feedback' class='feedback' role='status' aria-live='polite'></p>" +
@@ -3148,6 +3158,7 @@
             headers: { "content-type": "application/json", "accept": "application/json" },
             body: JSON.stringify({
               eventId: event.id,
+              surveySessionId: survey.sessionId,
               firstName: firstName,
               lastName: lastName,
               email: email,
@@ -3164,6 +3175,7 @@
             })
           });
           applyLiveEvent(event, payload);
+          state.contactFormStatus = payload.contactFormStatus || (contactConsent ? "unavailable" : "not-requested");
           if (payload.member && payload.withdrawToken) rememberWithdrawal(event, payload.member.id, payload.withdrawToken);
           state.personalProfile = personal;
           state.profileDraft = Object.assign({}, personal);

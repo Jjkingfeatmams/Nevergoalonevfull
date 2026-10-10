@@ -61,13 +61,28 @@ x-survey-report-token: <la valeur de SURVEY_REPORT_TOKEN>
 La réponse répartit les résultats entre `cible` et `non-cible`, sans jamais
 renvoyer les réponses brutes ni les commentaires.
 
-## Contact facultatif
+## Google Form dédié au test
 
-Le profil peut proposer une inscription facultative aux nouvelles de Never Go
-Alone. Cette demande est séparée du sondage tarifaire. Si le projet conserve
-un Google Form pour ce contact, configure au besoin
-`GOOGLE_FORM_RESPONSE_URL`; aucune réponse du sondage tarifaire ne doit lui
-être envoyée.
+Le parcours conserve son interface intégrée : aucun Google Form n’est affiché
+dans l’application. Avec son consentement **facultatif et distinct**, la
+personne autorise l’envoi de son e-mail et de ses quatre réponses de test vers le
+Google Form dédié. L’URL par défaut pointe vers le formulaire fourni pour cette
+version.
+
+L’envoi est effectué par la Function Netlify, et non par le navigateur, afin
+d’éviter les blocages CORS de Google Forms. En cas d’indisponibilité de Google,
+le profil est quand même ajouté au groupe ; aucun échec de formulaire externe
+ne doit annuler cette action.
+
+Pour remplacer le Google Form un jour, configure uniquement la variable
+d’environnement `NEVER_GO_ALONE_CONTACT_FORM_RESPONSE_URL` avec son endpoint
+`formResponse`, puis mets à jour les identifiants `entry.*` et les libellés de
+choix dans `netlify/functions/live-interest.mjs`. L’ancienne variable
+`GOOGLE_FORM_RESPONSE_URL` n’est volontairement pas utilisée.
+
+Le Google Form actuel ne comporte pas de champs de profil. Les informations
+publiées dans le groupe restent donc stockées séparément dans Netlify Blobs et
+ne sont jamais transmises aux organisateurs.
 
 Pour protéger l’accès au prototype, active la protection de site dans les
 réglages Netlify plutôt que de placer un mot de passe dans le code source.

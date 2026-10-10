@@ -13,7 +13,11 @@ const MAX_SUBSCRIPTION_FEEDBACK_LENGTH = 300;
 const EVENT_ID_PATTERN = /^nga-(paris|lyon|lille|marseille|bordeaux|nantes|strasbourg)-[a-z0-9-]{3,170}$/;
 const SURVEY_SESSION_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const GENDERS = new Set(["woman", "man", "unspecified"]);
-const GOOGLE_FORM_RESPONSE_URL = process.env.GOOGLE_FORM_RESPONSE_URL || "https://docs.google.com/forms/d/e/1FAIpQLSeoXqtJ7WOj_NkDK2kqRJa8Fey_msSvvU62978PLLdd5iaNNg/formResponse";
+// This is deliberately not GOOGLE_FORM_RESPONSE_URL: that legacy variable can
+// point to an older form with different questions. Only this dedicated form
+// receives a consenting visitor's e-mail together with their survey answers.
+const CONTACT_SURVEY_FORM_RESPONSE_URL = process.env.NEVER_GO_ALONE_CONTACT_FORM_RESPONSE_URL || "https://docs.google.com/forms/d/e/1FAIpQLSf51Y4uCxD4KDSdK-lxJmK4ZQREWskSfsKgjGDiHo4wDOexQw/formResponse";
+const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v1";
 const SITUATION_TARGETS = new Map([
   ["drop", true],
   ["unenthusiastic", true],
@@ -21,6 +25,21 @@ const SITUATION_TARGETS = new Map([
 ]);
 const OFFER_USEFUL_RESPONSES = new Set(["yes", "no"]);
 const SUBSCRIPTION_PREFERENCES = new Set(["monthly", "quarterly", "per-event", "no"]);
+const CONTACT_FORM_SITUATIONS = new Map([
+  ["drop", "Je laisse tomber"],
+  ["unenthusiastic", "J'y vais quand même, mais sans grand enthousiasme"],
+  ["alone-fine", "J'y vais seul(e) sans aucun problème"]
+]);
+const CONTACT_FORM_OFFER_USEFUL = new Map([
+  ["yes", "Oui, ça m’intéresse"],
+  ["no", "Non, ça ne m’intéresse pas"]
+]);
+const CONTACT_FORM_PREFERENCES = new Map([
+  ["monthly", "2,99 € par mois. Un accès aux tarifs de groupe sans frais de service"],
+  ["quarterly", "7,99 € par trimestre. Environ 2,66 € par mois, sans frais de service, avec un engagement de trois mois"],
+  ["per-event", "Payer seulement à l’événement. Tu paies le tarif de groupe plus 2 € de frais de service à chaque sortie"],
+  ["no", "Je n’utiliserais pas l’application avec ce modèle. Cette proposition ne me conviendrait pas."]
+]);
 const SURVEY_STAGES = new Set(["situation", "offer", "pricing"]);
 const SURVEY_PAYLOAD_KEYS = new Set([
   "sessionId",
@@ -118,39 +137,47 @@ function assertSurveySessionId(value) {
   return sessionId.toLowerCase();
 }
 
-async function submitLaunchQuestionnaire(email, interest, feedback, chat) {
+function completedSurveyForEvent(record, eventId) {
+  return validSurveyRecord(record) &&
+    record.eventId === eventId &&
+    record.progress === "completed" &&
+    record.offerUseful === "yes" &&
+    CONTACT_FORM_SITUATIONS.has(record.situation) &&
+    CONTACT_FORM_OFFER_USEFUL.has(record.offerUseful) &&
+    CONTACT_FORM_PREFERENCES.has(record.subscriptionPreference);
+}
+
+function optionalSurveySessionId(value) {
+  if (value === undefined || value === null || value === "") return "";
+  try {
+    return assertSurveySessionId(value);
+  } catch {
+    // The group interest must not be blocked by a missing or stale anonymous
+    // survey session. It simply cannot be sent to the contact form.
+    return "";
+  }
+}
+
+async function submitConsentedContactSurvey(email, survey) {
   const body = new URLSearchParams({
     "entry.2059906264": email,
-    "entry.725885935": interest,
-    "entry.2046482610": feedback,
-    "entry.1936886010": chat
+    "entry.725885935": CONTACT_FORM_SITUATIONS.get(survey.situation),
+    "entry.2046482610": CONTACT_FORM_OFFER_USEFUL.get(survey.offerUseful),
+    "entry.1936886010": CONTACT_FORM_PREFERENCES.get(survey.subscriptionPreference),
+    "entry.825396935": survey.subscriptionFeedback || ""
   });
 
-  let response;
   try {
-    response = await fetch(GOOGLE_FORM_RESPONSE_URL, {
+    const response = await fetch(CONTACT_SURVEY_FORM_RESPONSE_URL, {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded;charset=UTF-8" },
       body,
       redirect: "follow"
     });
+    return response.ok;
   } catch {
-    throw new HttpError(502, "Le formulaire de lancement est indisponible. Réessaie dans un instant.");
+    return false;
   }
-  if (!response.ok) {
-    throw new HttpError(502, "Le formulaire de lancement n’a pas pu être envoyé. Réessaie dans un instant.");
-  }
-}
-
-async function submitContactRequest(email, eventId) {
-  // This is an optional and separate contact opt-in. Pricing-survey answers
-  // never travel through this form and are never tied to the e-mail address.
-  return submitLaunchQuestionnaire(
-    email,
-    "Intéressé·e par rejoindre un groupe",
-    "Consentement de contact pour la sortie : " + eventId,
-    "Non renseigné"
-  );
 }
 
 function isGender(value) {
@@ -423,6 +450,7 @@ async function createInterest(request) {
   const submittedDescription = cleanOptionalPublicText(payload.description, MAX_DESCRIPTION_LENGTH, "Description");
   const submittedPassions = cleanOptionalPublicText(payload.passions, MAX_PASSIONS_LENGTH, "Passions");
   const contactConsent = payload.contactConsent === true;
+  const surveySessionId = optionalSurveySessionId(payload.surveySessionId);
   const namePattern = /^[\p{L}][\p{L}\p{M}' -]{1,49}$/u;
   const firstNamePattern = /^[\p{L}][\p{L}\p{M}' -]{1,29}$/u;
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -443,13 +471,8 @@ async function createInterest(request) {
   const key = recordKey(eventId, emailHash);
   const store = interestStore();
   const existing = await store.get(key, { type: "json" });
-  const contactAlreadySent = validRecord(existing) && existing.contactQuestionnaireSubmitted === true;
-
-  // Contact is a separate opt-in. It never carries anonymous pricing-survey
-  // answers, and neither the profile nor the e-mail is sent to organisers.
-  if (contactConsent && !contactAlreadySent) {
-    await submitContactRequest(email, eventId);
-  }
+  const previouslyContacted = validRecord(existing) && existing.contactQuestionnaireSubmitted === true;
+  const contactAlreadySent = previouslyContacted && existing.contactQuestionnaireForm === CONTACT_SURVEY_FORM_VERSION;
   const now = new Date().toISOString();
   const record = {
     id: validRecord(existing) ? existing.id : randomUUID(),
@@ -466,7 +489,13 @@ async function createInterest(request) {
     passions: submittedPassions.provided && submittedPassions.value
       ? submittedPassions.value
       : publicProfileText(existing, "passions", MAX_PASSIONS_LENGTH),
-    contactQuestionnaireSubmitted: contactConsent || contactAlreadySent,
+    // This flag is updated only after the dedicated form confirms receipt.
+    // Older records retain their previous status without being treated as a
+    // delivery to the new dedicated form.
+    contactQuestionnaireSubmitted: previouslyContacted,
+    contactQuestionnaireForm: validRecord(existing) && typeof existing.contactQuestionnaireForm === "string"
+      ? existing.contactQuestionnaireForm
+      : "",
     avatarKey: avatarKeyFrom(emailHash, gender),
     withdrawalHash,
     createdAt: validRecord(existing) ? existing.createdAt : now,
@@ -476,8 +505,37 @@ async function createInterest(request) {
   // Raw e-mail and surname never enter the persistent store. The selected
   // gender, age and nationality are public only after explicit consent.
   await store.setJSON(key, record);
+
+  // The anonymous survey is linked to an e-mail only after the distinct
+  // contact consent. A failed Google Form request never rolls back the group
+  // profile that was just saved above.
+  let contactFormStatus = "not-requested";
+  if (contactConsent) {
+    contactFormStatus = "unavailable";
+    try {
+      if (contactAlreadySent) {
+        contactFormStatus = "sent";
+      } else if (surveySessionId) {
+        const survey = await store.get(surveyKey(surveySessionId), { type: "json" });
+        if (completedSurveyForEvent(survey, eventId) && await submitConsentedContactSurvey(email, survey)) {
+          record.contactQuestionnaireSubmitted = true;
+          record.contactQuestionnaireForm = CONTACT_SURVEY_FORM_VERSION;
+          record.updatedAt = new Date().toISOString();
+          await store.setJSON(key, record);
+          contactFormStatus = "sent";
+        }
+      }
+    } catch {
+      // Deliberately do not surface a provider error or survey details.
+      contactFormStatus = "unavailable";
+    }
+  }
   const snapshot = await eventSnapshot(eventId);
-  return json(Object.assign(snapshot, { member: publicMember(record), withdrawToken: withdrawalToken }));
+  return json(Object.assign(snapshot, {
+    member: publicMember(record),
+    withdrawToken: withdrawalToken,
+    contactFormStatus
+  }));
 }
 
 async function withdrawInterest(request) {
