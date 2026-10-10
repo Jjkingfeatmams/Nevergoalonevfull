@@ -1765,7 +1765,7 @@
         "🔒 Discussion privée": "🔒 Private conversation",
         "Les messages du groupe sont visibles après avoir rejoint la sortie.": "Group messages are visible after you join the event.",
         "Voir mon groupe": "View my group",
-        "Rejoindre le groupe": "Join the group",
+        "Je suis intéressé(e)": "I'm interested",
         "Personnes intéressées": "Interested people",
         "Profils visibles. La discussion reste privée tant que tu n'as pas rejoint le groupe.": "Profiles are visible. The chat stays private until you join the group.",
         "Trier les profils par âge": "Filter profiles by age",
@@ -2071,7 +2071,12 @@
         var response = await fetch(path, Object.assign({}, settings, { headers: headers, credentials: "same-origin" }));
         var body = null;
         try { body = await response.json(); } catch (error) { body = null; }
-        if (!response.ok) throw new Error((body && body.error) || i18n("Le service live est indisponible. Réessaie dans un instant.", "The live service is unavailable. Please try again shortly."));
+        if (!response.ok) {
+          var requestError = new Error((body && body.error) || i18n("Le service live est indisponible. Réessaie dans un instant.", "The live service is unavailable. Please try again shortly."));
+          requestError.code = body && body.code ? body.code : "";
+          requestError.status = response.status;
+          throw requestError;
+        }
         return body || {};
       }
 
@@ -2457,10 +2462,10 @@
           "<div class='live-banner'>" + esc(liveLabel) + "</div>" +
           "<div class='info-card'><b>" + esc(i18n("Une sortie à partager", "A plan to share")) + "</b><p>" + esc(i18n("Découvre les profils intéressés, puis signale ton intérêt pour faire grandir ce groupe live.", "Discover interested profiles, then register your interest to grow this live group.")) + "</p></div>" +
           "<div class='info-card price-info-card'><b>💡 " + esc(i18n("Prix fictifs du prototype", "Fictional prototype prices")) + "</b><p>" + esc(i18n("Plein tarif individuel : ", "Individual full price: ")) + esc(formatEuro(event.publicPrice)) +
-          "<br>" + esc(i18n("Tarif groupe Never Go Alone : ", "Never Go Alone group price: ")) + esc(formatEuro(tarifGroupe(event))) + " (−" + Math.round(TARIFICATION.REMISE_GROUPE * 100) + " %)</p><p class='tiny'>" + esc(i18n("Soit ", "That is ")) + esc(formatEuro(saving)) + " " + esc(i18n("de remise groupe simulée. Les frais de service et les formules sont détaillés avant de rejoindre le groupe.", "of simulated group discount. Service fees and plans are shown before you join the group.")) + "</p></div>" +
+          "<br>" + esc(i18n("Tarif groupe Never Go Alone : ", "Never Go Alone group price: ")) + esc(formatEuro(tarifGroupe(event))) + " (−" + Math.round(TARIFICATION.REMISE_GROUPE * 100) + " %)</p><p class='tiny'>" + esc(i18n("Soit ", "That is ")) + esc(formatEuro(saving)) + " " + esc(i18n("de remise groupe simulée. Les frais de service et les formules sont détaillés avant de signaler ton intérêt.", "of simulated group discount. Service fees and plans are shown before you register your interest.")) + "</p></div>" +
           "<button type='button' class='primary ghost' data-action='people'>" + esc(peopleLabel) + "</button>" +
           interestManager +
-          "</div><div class='fixed-action'><button type='button' class='primary " + (hasRegisteredInterest ? "ghost" : "coral") + "' data-action='" + (hasRegisteredInterest ? "people" : "join") + "'>" + esc(hasRegisteredInterest ? peopleLabel : i18n("Rejoindre le groupe", "Join the group")) + "</button></div></section>";
+          "</div><div class='fixed-action'><button type='button' class='primary " + (hasRegisteredInterest ? "ghost" : "coral") + "' data-action='" + (hasRegisteredInterest ? "people" : "join") + "'>" + esc(hasRegisteredInterest ? peopleLabel : i18n("Je suis intéressé(e)", "I'm interested")) + "</button></div></section>";
       }
 
       function peoplePreview() {
@@ -2521,7 +2526,9 @@
           "</div></section>";
       }
 
-      var surveySessionStoragePrefix = "never-go-alone:survey-session:";
+      // Versioned so anonymous IDs created by an earlier prototype release
+      // cannot be revived after this flow changes.
+      var surveySessionStoragePrefix = "never-go-alone:survey-session:v2:";
 
       function randomSurveySessionId() {
         if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
@@ -2534,12 +2541,12 @@
         return hex.slice(0, 8) + "-" + hex.slice(8, 12) + "-" + hex.slice(12, 16) + "-" + hex.slice(16, 20) + "-" + hex.slice(20);
       }
 
-      function createSurveySessionId(eventId) {
+      function createSurveySessionId(eventId, forceNew) {
         var storageKey = surveySessionStoragePrefix + String(eventId || "");
         var uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         try {
           var previous = sessionStorage.getItem(storageKey);
-          if (uuidPattern.test(previous || "")) return previous;
+          if (!forceNew && uuidPattern.test(previous || "")) return previous;
           var created = randomSurveySessionId();
           sessionStorage.setItem(storageKey, created);
           return created;
@@ -2584,7 +2591,7 @@
         if (feedback) feedback.textContent = message || "";
       }
 
-      function saveSurveyStage(stage, values) {
+      function saveSurveyStage(stage, values, retriedAfterSessionConflict) {
         var survey = activeSurvey();
         if (!survey) return Promise.reject(new Error("Le parcours de test doit être repris depuis la sortie."));
         var details = values || {};
@@ -2603,6 +2610,15 @@
           method: "POST",
           headers: { "content-type": "application/json", "accept": "application/json" },
           body: JSON.stringify(body)
+        }).catch(function (error) {
+          // A stale browser tab can hold a survey UUID that belongs to a
+          // different event on the server. Replace it once and transparently
+          // resend this stage rather than blocking the visitor.
+          if (!retriedAfterSessionConflict && error && error.code === "survey-session-conflict") {
+            survey.sessionId = createSurveySessionId(survey.eventId, true);
+            return saveSurveyStage(stage, values, true);
+          }
+          throw error;
         });
       }
 
@@ -2641,12 +2657,12 @@
       function joinPage() {
         var survey = activeSurvey();
         if (!survey || survey.offerUseful !== "yes") {
-          return "<section class='view'>" + header(i18n("Rejoindre le groupe", "Join the group")) + "<div class='scroll'><div class='empty'><h2>" + esc(i18n("Commence par le court sondage.", "Start with the short survey.")) + "</h2><p>" + esc(i18n("Il permet de personnaliser cette simulation avant les informations de groupe.", "It personalises this simulation before the group details.")) + "</p><button type='button' class='primary' data-action='join'>" + esc(i18n("Commencer", "Start")) + "</button></div></div></section>";
+          return "<section class='view'>" + header(i18n("Je suis intéressé(e)", "I'm interested")) + "<div class='scroll'><div class='empty'><h2>" + esc(i18n("Commence par le court sondage.", "Start with the short survey.")) + "</h2><p>" + esc(i18n("Il permet de personnaliser cette simulation avant les informations de groupe.", "It personalises this simulation before the group details.")) + "</p><button type='button' class='primary' data-action='join'>" + esc(i18n("Commencer", "Start")) + "</button></div></div></section>";
         }
         if (!personalProfileReady(state.personalProfile)) {
-          return "<section class='view'>" + header(i18n("Rejoindre le groupe", "Join the group")) + "<div class='scroll'><div class='empty'><h2>" + esc(i18n("Ton profil est nécessaire.", "Your profile is needed.")) + "</h2><p>" + esc(i18n("Renseigne-le une seule fois : il sera ensuite utilisé automatiquement pour tous les groupes que tu rejoins.", "Fill it in once: it will then be automatically used for every group you join.")) + "</p><button type='button' class='primary coral' data-action='edit-profile'>" + esc(i18n("Compléter mon profil", "Complete my profile")) + "</button></div></div></section>";
+          return "<section class='view'>" + header(i18n("Je suis intéressé(e)", "I'm interested")) + "<div class='scroll'><div class='empty'><h2>" + esc(i18n("Ton profil est nécessaire.", "Your profile is needed.")) + "</h2><p>" + esc(i18n("Renseigne-le une seule fois : il sera ensuite utilisé automatiquement pour tous les groupes qui t’intéressent.", "Fill it in once: it will then be automatically used for every group you are interested in.")) + "</p><button type='button' class='primary coral' data-action='edit-profile'>" + esc(i18n("Compléter mon profil", "Complete my profile")) + "</button></div></div></section>";
         }
-        return "<section class='view'>" + header(i18n("Rejoindre le groupe", "Join the group")) + liveJoinForm(selectedEvent()) + "</section>";
+        return "<section class='view'>" + header(i18n("Je suis intéressé(e)", "I'm interested")) + liveJoinForm(selectedEvent()) + "</section>";
       }
 
       function liveJoinForm(event) {
@@ -2669,8 +2685,8 @@
           personal.nationality,
           activityForDisplay(personal.activity)
         ].filter(Boolean).join(" · ");
-        return "<div class='scroll live-form'>" + journeyProgress(3, i18n("Rejoindre le groupe", "Join the group")) +
-          "<h1>" + esc(i18n("Rejoins ce groupe", "Join this group")) + "</h1><p class='muted'>" + esc(i18n("Tu as indiqué que le service t’intéressait. Voici la dernière étape du test : ton profil déjà renseigné sera ajouté à ce groupe fictif.", "You said the service interests you. This is the final step of the test: the profile you already completed will be added to this fictional group.")) + "</p>" +
+        return "<div class='scroll live-form'>" + journeyProgress(3, i18n("Je suis intéressé(e)", "I'm interested")) +
+          "<h1>" + esc(i18n("Confirme ton intérêt", "Confirm your interest")) + "</h1><p class='muted'>" + esc(i18n("Tu as indiqué que le service t’intéressait. Voici la dernière étape du test : ton profil déjà renseigné sera ajouté à ce groupe fictif.", "You said the service interests you. This is the final step of the test: the profile you already completed will be added to this fictional group.")) + "</p>" +
           "<div class='live-banner'>" + esc(countNote) + "</div>" +
           "<form id='live-interest-form' novalidate autocomplete='off'>" +
           "<section class='subscription-test' aria-labelledby='subscription-test-heading'><div class='subscription-test-head'><span class='subscription-test-icon' aria-hidden='true'>💸</span><div><h2 id='subscription-test-heading'>" + esc(i18n("La formule qui te conviendrait", "The plan that would suit you")) + "</h2><p>" + esc(i18n("Tous les membres bénéficient du tarif groupe réduit. L’abonnement supprime les frais de service sur toutes les sorties.", "Every member benefits from the reduced group price. The subscription removes service fees on every event.")) + "</p></div></div>" +
