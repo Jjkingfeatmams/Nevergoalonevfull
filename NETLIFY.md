@@ -5,6 +5,22 @@ ajoute un sondage tarifaire **anonyme**, distinct des profils de groupe.
 Les événements, tarifs et données affichés sont fictifs et servent uniquement
 au prototype.
 
+## Simulation tarifaire
+
+Les prix de l’interface proviennent d’une configuration unique dans
+`index.html` :
+
+- remise groupe : 10 % du plein tarif ;
+- frais sans abonnement : 50 % de cette remise, arrondis au centime ;
+- plafond des frais : 2,99 € par sortie ;
+- abonnement mensuel : 2,99 € ;
+- abonnement trimestriel : 7,99 €.
+
+Ainsi, dès qu’il existe une remise, le total sans abonnement reste strictement
+inférieur au plein tarif. Avec l’abonnement, les frais de service sont nuls.
+Le détail du tarif groupe, des frais et du total est affiché avant que la
+personne manifeste son intérêt.
+
 ## Publication
 
 1. Crée un projet Netlify depuis ce dossier Git complet. Ne publie pas
@@ -73,8 +89,8 @@ Une réponse « Non, ça ne m’intéresse pas » à l’étape de l’offre est
 enregistrée dans ce Google Form, même si la personne ne poursuit pas le
 parcours. Comme le formulaire impose un champ e-mail et un choix de formule,
 la Function utilise alors une adresse technique aléatoire, non délivrable et
-se terminant par `@never-go-alone.invalid`, ainsi que l’option de formule
-indiquant que la personne n’utiliserait pas l’application. Cette adresse ne
+se terminant par `@never-go-alone.invalid`, ainsi que l’option « Je ne
+paierais pas d’abonnement ». Cette adresse ne
 correspond jamais à un e-mail réel et ne permet pas d’identifier la personne.
 Dans ce cas, aucun profil, nom, prénom, e-mail réel ou autre donnée personnelle
 n’est envoyé à Google.
@@ -100,6 +116,14 @@ d’environnement `NEVER_GO_ALONE_CONTACT_FORM_RESPONSE_URL` avec son endpoint
 `formResponse`, puis mets à jour les identifiants `entry.*` et les libellés de
 choix dans `netlify/functions/live-interest.mjs`. L’ancienne variable
 `GOOGLE_FORM_RESPONSE_URL` n’est volontairement pas utilisée.
+
+Le Google Form dédié doit aussi conserver ces quatre choix pour la question
+sur la formule, afin que ses réponses correspondent exactement à l’interface :
+
+- « 2,99 € par mois. Un accès aux tarifs de groupe sans frais de service » ;
+- « 7,99 € par trimestre. Environ 2,66 € par mois, sans frais de service, avec un engagement de trois mois » ;
+- « Payer seulement à l’événement. Tu paies le tarif de groupe plus des frais de service égaux à 50 % de la remise, plafonnés à 2,99 € par sortie » ;
+- « Je ne paierais pas d’abonnement ».
 
 Le Google Form actuel ne comporte pas de champs de profil. Les informations
 publiées dans le groupe restent donc stockées séparément dans Netlify Blobs et

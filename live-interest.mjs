@@ -17,8 +17,8 @@ const GENDERS = new Set(["woman", "man", "unspecified"]);
 // point to an older form with different questions. Only this dedicated form
 // receives a consenting visitor's e-mail together with their survey answers.
 const CONTACT_SURVEY_FORM_RESPONSE_URL = process.env.NEVER_GO_ALONE_CONTACT_FORM_RESPONSE_URL || "https://docs.google.com/forms/d/e/1FAIpQLSf51Y4uCxD4KDSdK-lxJmK4ZQREWskSfsKgjGDiHo4wDOexQw/formResponse";
-const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v1";
-const ANONYMOUS_DECLINE_FORM_VERSION = "dedicated-decline-v1";
+const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v2";
+const ANONYMOUS_DECLINE_FORM_VERSION = "dedicated-decline-v2";
 const ANONYMOUS_DECLINE_NOTE = "Réponse anonyme — parcours arrêté après la question d’intérêt.";
 const SITUATION_TARGETS = new Map([
   ["drop", true],
@@ -39,8 +39,8 @@ const CONTACT_FORM_OFFER_USEFUL = new Map([
 const CONTACT_FORM_PREFERENCES = new Map([
   ["monthly", "2,99 € par mois. Un accès aux tarifs de groupe sans frais de service"],
   ["quarterly", "7,99 € par trimestre. Environ 2,66 € par mois, sans frais de service, avec un engagement de trois mois"],
-  ["per-event", "Payer seulement à l’événement. Tu paies le tarif de groupe plus 2 € de frais de service à chaque sortie"],
-  ["no", "Je n’utiliserais pas l’application avec ce modèle. Cette proposition ne me conviendrait pas."]
+  ["per-event", "Payer seulement à l’événement. Tu paies le tarif de groupe plus des frais de service égaux à 50 % de la remise, plafonnés à 2,99 € par sortie"],
+  ["no", "Je ne paierais pas d’abonnement"]
 ]);
 const SURVEY_STAGES = new Set(["situation", "offer", "pricing"]);
 const SURVEY_PAYLOAD_KEYS = new Set([

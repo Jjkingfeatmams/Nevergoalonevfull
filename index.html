@@ -1008,6 +1008,8 @@
     .pricing-simulation h3 { margin: 0 0 2px; font-size: 14px; }
     .pricing-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; color: var(--muted); font-size: 11px; line-height: 1.35; }
     .pricing-row span { min-width: 0; }
+    .pricing-row strong { display: block; color: var(--ink); font-size: 11px; }
+    .pricing-row small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; font-weight: 600; line-height: 1.35; }
     .pricing-row b { padding: 4px 6px; border-radius: 8px; color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, var(--card)); font-size: 12px; white-space: nowrap; }
     .pricing-row.full-price b { color: #fff4f2; background: var(--coral); }
     .pricing-row.per-event-price b { color: #342300; background: var(--gold); }
@@ -1287,6 +1289,8 @@
     .pricing-simulation h3 { font-size: 17px; }
     .pricing-row { font-size: 13px; }
     .pricing-row b { font-size: 16px; }
+    .pricing-row strong { font-size: 13px; }
+    .pricing-row small { font-size: 11px; }
     .pricing-simulation p, .privacy-card p { font-size: 12px; }
     .privacy-card b { font-size: 14px; }
     .live-banner, .live-count, .live-member-copy { font-size: 13px; }
@@ -1341,16 +1345,16 @@
     (function () {
       "use strict";
 
-      // Configuration unique de la simulation tarifaire. Pour comparer le
-      // modèle alternatif, passer MODE_FRAIS_SERVICE à "pourcentage".
+      // Configuration unique de la simulation tarifaire. Tous les montants
+      // affichés dans le parcours viennent de cette configuration et de la
+      // fonction calculerFraisService ci-dessous.
       var TARIFICATION = Object.freeze({
-        REMISE_GROUPE: 0.05,
-        FRAIS_SERVICE_FIXE: 2,
+        REMISE_GROUPE: 0.10,
+        PART_REMISE_FRAIS: 0.5,
         PRIX_ABONNEMENT_MENSUEL: 2.99,
         PRIX_ABONNEMENT_TRIMESTRIEL: 7.99,
-        MODE_FRAIS_SERVICE: "fixe", // "pourcentage" pour le mode alternatif
-        TAUX_FRAIS_SERVICE: 0.10,
-        FRAIS_SERVICE_MINIMUM: 1
+        // Plafond indépendant, fixé par défaut au prix mensuel.
+        FRAIS_MAX: 2.99
       });
 
       // Les événements, tarifs et tailles de groupes ci-dessous sont des
@@ -1550,27 +1554,37 @@
         return arrondirEuro(Number(event.publicPrice) * (1 - TARIFICATION.REMISE_GROUPE));
       }
 
-      function fraisService(event) {
-        var groupe = tarifGroupe(event);
-        if (TARIFICATION.MODE_FRAIS_SERVICE === "pourcentage") {
-          return arrondirEuro(Math.max(
-            TARIFICATION.FRAIS_SERVICE_MINIMUM,
-            groupe * TARIFICATION.TAUX_FRAIS_SERVICE
-          ));
-        }
-        return TARIFICATION.FRAIS_SERVICE_FIXE;
+      // Source unique de vérité pour les frais de service. Les calculs sont
+      // faits en centimes afin de préserver une économie dès qu'une remise
+      // positive existe, y compris pour les très petits montants.
+      function calculerFraisService(pleinTarif, tarifGroupe) {
+        var remiseCentimes = Math.max(0, Math.round((Number(pleinTarif) - Number(tarifGroupe)) * 100));
+        if (!remiseCentimes) return 0;
+
+        var fraisTheoriquesCentimes = Math.round(remiseCentimes * TARIFICATION.PART_REMISE_FRAIS);
+        var plafondCentimes = Math.round(TARIFICATION.FRAIS_MAX * 100);
+        // Le dernier plafond d'un centime garantit que le total sans
+        // abonnement est strictement inférieur au plein tarif si la remise
+        // est positive (cas limite d'une remise d'un centime inclus).
+        var fraisCentimes = Math.min(
+          fraisTheoriquesCentimes,
+          plafondCentimes,
+          Math.max(0, remiseCentimes - 1)
+        );
+        return fraisCentimes / 100;
       }
 
-      function prixSansAbonnement(event) {
-        return arrondirEuro(tarifGroupe(event) + fraisService(event));
+      function prixSansAbonnement(pleinTarif, tarifGroupe) {
+        return arrondirEuro(Number(tarifGroupe) + calculerFraisService(pleinTarif, tarifGroupe));
       }
 
       function remiseGroupe(event) {
-        return arrondirEuro(Number(event.publicPrice) - tarifGroupe(event));
+        return Math.max(0, arrondirEuro(Number(event.publicPrice) - tarifGroupe(event)));
       }
 
-      function sortiesPourRentabiliser(event) {
-        return Math.max(1, Math.ceil(TARIFICATION.PRIX_ABONNEMENT_MENSUEL / Math.max(.01, fraisService(event))));
+      function sortiesPourRentabiliser(pleinTarif, tarifGroupe) {
+        var frais = calculerFraisService(pleinTarif, tarifGroupe);
+        return frais > 0 ? Math.ceil(TARIFICATION.PRIX_ABONNEMENT_MENSUEL / frais) : 0;
       }
 
       function formatEuro(montant) {
@@ -2448,6 +2462,15 @@
       function eventDetail() {
         var event = selectedEvent();
         var saving = remiseGroupe(event);
+        var priceExplanation = saving > 0
+          ? i18n(
+            "de remise groupe simulée. Sans abonnement, les frais correspondent à " + Math.round(TARIFICATION.PART_REMISE_FRAIS * 100) + " % de cette remise et ne dépassent jamais " + formatEuro(TARIFICATION.FRAIS_MAX) + " par sortie. Le total est affiché clairement avant de signaler ton intérêt.",
+            "of simulated group discount. Without a subscription, service fees are " + Math.round(TARIFICATION.PART_REMISE_FRAIS * 100) + "% of this saving and never exceed " + formatEuro(TARIFICATION.FRAIS_MAX) + " per event. The total is clearly shown before you register your interest."
+          )
+          : i18n(
+            "de remise groupe simulée. Le prix est alors identique au plein tarif : ce qui change est de partir en groupe.",
+            "of simulated group discount. The price is then the same as the full price: what changes is going as a group."
+          );
         var count = liveCount(event);
         var hasRegisteredInterest = !!rememberedWithdrawal(event);
         var liveLabel = count ? i18n(count + " personne" + (count > 1 ? "s ont" : " a") + " déjà signalé son intérêt.", count + " person" + (count > 1 ? "s have" : " has") + " already registered interest.") : i18n("Le groupe live est prêt à accueillir sa première personne.", "The live group is ready for its first person.");
@@ -2462,7 +2485,7 @@
           "<div class='live-banner'>" + esc(liveLabel) + "</div>" +
           "<div class='info-card'><b>" + esc(i18n("Une sortie à partager", "A plan to share")) + "</b><p>" + esc(i18n("Découvre les profils intéressés, puis signale ton intérêt pour faire grandir ce groupe live.", "Discover interested profiles, then register your interest to grow this live group.")) + "</p></div>" +
           "<div class='info-card price-info-card'><b>💡 " + esc(i18n("Prix fictifs du prototype", "Fictional prototype prices")) + "</b><p>" + esc(i18n("Plein tarif individuel : ", "Individual full price: ")) + esc(formatEuro(event.publicPrice)) +
-          "<br>" + esc(i18n("Tarif groupe Never Go Alone : ", "Never Go Alone group price: ")) + esc(formatEuro(tarifGroupe(event))) + " (−" + Math.round(TARIFICATION.REMISE_GROUPE * 100) + " %)</p><p class='tiny'>" + esc(i18n("Soit ", "That is ")) + esc(formatEuro(saving)) + " " + esc(i18n("de remise groupe simulée. Les frais de service et les formules sont détaillés avant de signaler ton intérêt.", "of simulated group discount. Service fees and plans are shown before you register your interest.")) + "</p></div>" +
+          "<br>" + esc(i18n("Tarif groupe Never Go Alone : ", "Never Go Alone group price: ")) + esc(formatEuro(tarifGroupe(event))) + " (−" + Math.round(TARIFICATION.REMISE_GROUPE * 100) + " %)</p><p class='tiny'>" + esc(i18n("Soit ", "That is ")) + esc(formatEuro(saving)) + " " + esc(priceExplanation) + "</p></div>" +
           "<button type='button' class='primary ghost' data-action='people'>" + esc(peopleLabel) + "</button>" +
           interestManager +
           "</div><div class='fixed-action'><button type='button' class='primary " + (hasRegisteredInterest ? "ghost" : "coral") + "' data-action='" + (hasRegisteredInterest ? "people" : "join") + "'>" + esc(hasRegisteredInterest ? peopleLabel : i18n("Je suis intéressé(e)", "I'm interested")) + "</button></div></section>";
@@ -2686,13 +2709,70 @@
         var countNote = count ? i18n(count + " personne" + (count > 1 ? "s sont" : " est") + " déjà intéressée" + (count > 1 ? "s" : "") + ".", count + " person" + (count > 1 ? "s are" : " is") + " already interested.") : i18n("Tu peux lancer ce groupe live.", "You can start this live group.");
         var publicPrice = Number(event.publicPrice);
         var groupPrice = tarifGroupe(event);
-        var serviceFee = fraisService(event);
-        var noSubscriptionPrice = prixSansAbonnement(event);
+        var serviceFee = calculerFraisService(publicPrice, groupPrice);
+        var noSubscriptionPrice = prixSansAbonnement(publicPrice, groupPrice);
         var groupSaving = remiseGroupe(event);
-        var tripsToBreakEven = sortiesPourRentabiliser(event);
-        var noSubscriptionNote = groupSaving > serviceFee
-          ? i18n("Sans abonnement, la remise groupe reste supérieure aux frais de service : " + formatEuro(groupSaving - serviceFee) + " d’écart par rapport au plein tarif dans cette simulation.", "Without a subscription, the group discount still exceeds the service fee: " + formatEuro(groupSaving - serviceFee) + " below the full price in this simulation.")
-          : i18n("Sans abonnement, les montants sont simplement affichés : la remise groupe ne couvre pas entièrement les frais de service dans cette simulation.", "Without a subscription, the amounts are simply shown: the group discount does not fully cover the service fee in this simulation.");
+        var tripsToBreakEven = sortiesPourRentabiliser(publicPrice, groupPrice);
+        var feePercentage = Math.round(TARIFICATION.PART_REMISE_FRAIS * 100);
+        var uncappedServiceFee = arrondirEuro(groupSaving * TARIFICATION.PART_REMISE_FRAIS);
+        var serviceFeeIsCapped = serviceFee === TARIFICATION.FRAIS_MAX && uncappedServiceFee > serviceFee;
+        var noSubscriptionNote;
+        if (groupSaving > 0 && serviceFee > 0) {
+          noSubscriptionNote = i18n(
+            "Sans abonnement, tu paies moins qu’en y allant seul(e) : les frais de service " +
+              (serviceFeeIsCapped ? "sont calculés à " + feePercentage + " % de la remise puis plafonnés" : "représentent " + feePercentage + " % de la remise") +
+              ". Avec l’abonnement, tu gardes toute l’économie.",
+            "Without a subscription, you pay less than going alone: service fees " +
+              (serviceFeeIsCapped ? "are calculated at " + feePercentage + "% of the saving then capped" : "represent " + feePercentage + "% of the saving") +
+              ". With a subscription, you keep the whole saving."
+          );
+        } else if (groupSaving > 0) {
+          noSubscriptionNote = i18n(
+            "Sans abonnement, tu paies moins qu’en y allant seul(e) et aucun frais de service n’est appliqué. Avec l’abonnement, tu gardes toute l’économie.",
+            "Without a subscription, you pay less than going alone and no service fee is charged. With a subscription, you keep the whole saving."
+          );
+        } else {
+          noSubscriptionNote = i18n(
+            "Le prix est identique au plein tarif : ce qui change est de partir en groupe.",
+            "The price is the same as the full price: what changes is going as a group."
+          );
+        }
+        if (serviceFeeIsCapped) {
+          noSubscriptionNote += " " + i18n(
+            "Les frais de service ne dépassent jamais " + formatEuro(TARIFICATION.FRAIS_MAX) + " par sortie.",
+            "Service fees never exceed " + formatEuro(TARIFICATION.FRAIS_MAX) + " per event."
+          );
+        }
+        var breakEvenNote = "";
+        if (serviceFee > 0) {
+          breakEvenNote = tripsToBreakEven === 1
+            ? i18n(
+              "Dès ta première sortie, les " + formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL) + " de l’abonnement sont rentabilisés.",
+              "From your first event, the " + formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL) + " subscription pays for itself."
+            )
+            : i18n(
+              "À partir de " + tripsToBreakEven + " sorties par mois à ce prix, les " + formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL) + " sont rentabilisés grâce aux frais de service évités.",
+              "From " + tripsToBreakEven + " events per month at this price, the " + formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL) + " subscription pays for itself through avoided service fees."
+            );
+        }
+        var noSubscriptionDetail = groupSaving > 0
+          ? i18n(
+            "Tarif groupe " + formatEuro(groupPrice) + " + frais de service " + formatEuro(serviceFee) + " (" + feePercentage + " % de la remise" + (serviceFeeIsCapped ? ", plafond appliqué" : "") + ")",
+            "Group price " + formatEuro(groupPrice) + " + service fee " + formatEuro(serviceFee) + " (" + feePercentage + "% of the saving" + (serviceFeeIsCapped ? ", cap applied" : "") + ")"
+          )
+          : i18n(
+            "Tarif groupe " + formatEuro(groupPrice) + " + 0 € de frais de service",
+            "Group price " + formatEuro(groupPrice) + " + €0 service fee"
+          );
+        var subscriptionDetail = i18n(
+          "Tarif groupe " + formatEuro(groupPrice) + " + 0 € de frais de service",
+          "Group price " + formatEuro(groupPrice) + " + €0 service fee"
+        );
+        var quarterlyMonthlyEquivalent = formatEuro(TARIFICATION.PRIX_ABONNEMENT_TRIMESTRIEL / 3);
+        var perEventPlanDescription = i18n(
+          "Tu paies le tarif de groupe plus des frais de service égaux à " + feePercentage + " % de la remise, plafonnés à " + formatEuro(TARIFICATION.FRAIS_MAX) + " par sortie",
+          "You pay the group price plus service fees equal to " + feePercentage + "% of the saving, capped at " + formatEuro(TARIFICATION.FRAIS_MAX) + " per event"
+        );
         var profileLine = [
           personal.firstName,
           personal.age ? personal.age + " " + i18n("ans", "years old") : "",
@@ -2704,12 +2784,12 @@
           "<div class='live-banner'>" + esc(countNote) + "</div>" +
           "<form id='live-interest-form' novalidate autocomplete='off'>" +
           "<section class='subscription-test' aria-labelledby='subscription-test-heading'><div class='subscription-test-head'><span class='subscription-test-icon' aria-hidden='true'>💸</span><div><h2 id='subscription-test-heading'>" + esc(i18n("La formule qui te conviendrait", "The plan that would suit you")) + "</h2><p>" + esc(i18n("Tous les membres bénéficient du tarif groupe réduit. L’abonnement supprime les frais de service sur toutes les sorties.", "Every member benefits from the reduced group price. The subscription removes service fees on every event.")) + "</p></div></div>" +
-          "<div class='pricing-simulation'><h3>" + esc(i18n("Simulation pour cette sortie", "Simulation for this event")) + "</h3><div class='pricing-row full-price'><span>" + esc(i18n("Plein tarif hors application", "Full price outside the app")) + "</span><b>" + esc(formatEuro(publicPrice)) + "</b></div><div class='pricing-row per-event-price'><span>" + esc(i18n("Sans abonnement · tarif groupe + ", "Without subscription · group price + ")) + esc(formatEuro(serviceFee)) + " " + esc(i18n("de frais", "service fee")) + "</span><b>" + esc(formatEuro(noSubscriptionPrice)) + "</b></div><div class='pricing-row highlight'><span>" + esc(i18n("Avec abonnement · tarif groupe + 0 € de frais", "With subscription · group price + €0 fees")) + "</span><b>" + esc(formatEuro(groupPrice)) + "</b></div><p>" + esc(noSubscriptionNote) + " " + esc(i18n("À partir de ", "From ")) + tripsToBreakEven + " " + esc(i18n("sortie" + (tripsToBreakEven > 1 ? "s" : "") + " par mois, les ", "event" + (tripsToBreakEven > 1 ? "s" : "") + " per month, the ")) + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL)) + " " + esc(i18n("sont rentabilisés grâce aux frais de service évités.", "subscription pays for itself through avoided service fees.")) + "</p></div>" +
+          "<div class='pricing-simulation'><h3>" + esc(i18n("Simulation pour cette sortie", "Simulation for this event")) + "</h3><div class='pricing-row full-price'><span><strong>" + esc(i18n("Plein tarif hors application", "Full price outside the app")) + "</strong></span><b>" + esc(formatEuro(publicPrice)) + "</b></div><div class='pricing-row per-event-price'><span><strong>" + esc(i18n("Sans abonnement · total à payer", "Without subscription · total to pay")) + "</strong><small>" + esc(noSubscriptionDetail) + "</small></span><b>" + esc(formatEuro(noSubscriptionPrice)) + "</b></div><div class='pricing-row highlight'><span><strong>" + esc(i18n("Avec abonnement · total à payer", "With subscription · total to pay")) + "</strong><small>" + esc(subscriptionDetail) + "</small></span><b>" + esc(formatEuro(groupPrice)) + "</b></div><p>" + esc(noSubscriptionNote) + (breakEvenNote ? " " + esc(breakEvenNote) : "") + "</p></div>" +
           "<div class='field'><label>" + esc(i18n("Quelle formule te conviendrait le mieux ?", "Which plan would suit you best?")) + "</label>" +
           "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='monthly' required><span><b>" + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_MENSUEL)) + " " + esc(i18n("par mois", "per month")) + "</b><small>" + esc(i18n("Un accès aux tarifs de groupe sans frais de service", "Access to group prices without service fees")) + "</small></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='quarterly'><span><b>" + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_TRIMESTRIEL)) + " " + esc(i18n("par trimestre", "per quarter")) + "</b><small>" + esc(i18n("Environ 2,66 € par mois, sans frais de service, avec un engagement de trois mois", "Around €2.66 per month, no service fees, with a three-month commitment")) + "</small></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='per-event'><span><b>" + esc(i18n("Payer seulement à l’événement", "Pay per event")) + "</b><small>" + esc(i18n("Tu paies le tarif de groupe plus ", "You pay the group price plus ")) + esc(formatEuro(serviceFee)) + " " + esc(i18n("de frais de service à chaque sortie", "service fee for each event")) + "</small></span></label>" +
-          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='no'><span><b>" + esc(i18n("Je n’utiliserais pas l’application avec ce modèle", "I would not use the app with this model")) + "</b><small>" + esc(i18n("Cette proposition ne me conviendrait pas.", "This offer would not suit me.")) + "</small></span></label></div>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='quarterly'><span><b>" + esc(formatEuro(TARIFICATION.PRIX_ABONNEMENT_TRIMESTRIEL)) + " " + esc(i18n("par trimestre", "per quarter")) + "</b><small>" + esc(i18n("Environ " + quarterlyMonthlyEquivalent + " par mois, sans frais de service, avec un engagement de trois mois", "Around " + quarterlyMonthlyEquivalent + " per month, no service fees, with a three-month commitment")) + "</small></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='per-event'><span><b>" + esc(i18n("Payer seulement à l’événement", "Pay per event")) + "</b><small>" + esc(perEventPlanDescription) + "</small></span></label>" +
+          "<label class='subscription-option'><input type='radio' name='live-subscription-preference' value='no'><span><b>" + esc(i18n("Je ne paierais pas d’abonnement", "I would not pay for a subscription")) + "</b><small>" + esc(i18n("Cette proposition ne me conviendrait pas.", "This offer would not suit me.")) + "</small></span></label></div>" +
           "<div class='field'><label for='live-subscription-feedback'>" + esc(i18n("Qu’est-ce qui rendrait cette formule plus intéressante ? (facultatif)", "What would make this plan more appealing? (optional)")) + "</label><textarea id='live-subscription-feedback' name='subscriptionFeedback' maxlength='300' placeholder='" + esc(i18n("Ex. davantage de réductions, plus de sorties chaque semaine…", "E.g. more discounts, more events each week…")) + "'></textarea></div>" +
           "<p class='subscription-disclaimer'>" + esc(i18n("Test uniquement : aucune carte bancaire, aucun paiement et aucun engagement ne sont demandés. Les montants, événements et données présentés sont fictifs. Ta réponse est privée et n’apparaît jamais dans le groupe.", "Test only: no bank card, payment or commitment is requested. The amounts, events and data shown are fictional. Your answer is private and never appears in the group.")) + "</p></section>" +
           "<section class='survey-card profile-summary-card'><h2>👤 " + esc(i18n("Ton profil est prêt", "Your profile is ready")) + "</h2><p>" + esc(i18n("Tu ne remplis aucune information personnelle une seconde fois.", "You do not fill in any personal details a second time.")) + "</p><p class='profile-summary-line'>" + esc(profileLine) + "</p><p class='tiny'>" + esc(i18n("Ce sont ces informations qui seront utilisées pour ton profil dans le groupe après ton accord ci-dessous. Ton nom complet et ton e-mail restent privés.", "These are the details that will be used for your group profile after your consent below. Your full name and email remain private.")) + "</p></section>" +
@@ -2787,6 +2867,9 @@
         var reservation = activeReservation();
         var confirmed = reservation.keepSmallGroup || event.current >= event.minimum;
         var paymentAvailable = confirmed && reservation.day === "J-7" && !reservation.paid;
+        var ticketGroupPrice = tarifGroupe(event);
+        var ticketServiceFee = calculerFraisService(event.publicPrice, ticketGroupPrice);
+        var ticketTotalWithoutSubscription = prixSansAbonnement(event.publicPrice, ticketGroupPrice);
         var steps = [
           ["Intérêt enregistré", true],
           ["Groupe lancé", confirmed],
@@ -2808,7 +2891,9 @@
         } else if (paymentAvailable) {
           html += "<div class='status'>Le groupe est prêt : confirme ta place pour déclencher le paiement.</div>" +
             "<button type='button' class='primary' data-action='pay'>Confirmer et payer " +
-            formatEuro(prixSansAbonnement(event)) + "</button>";
+            formatEuro(ticketTotalWithoutSubscription) + "</button>" +
+            "<p class='tiny'>Total sans abonnement : tarif groupe " + esc(formatEuro(ticketGroupPrice)) +
+            " + frais de service " + esc(formatEuro(ticketServiceFee)) + ".</p>";
         } else {
           html += "<div class='status neutral'>Paiement disponible à J-7 seulement.</div>";
         }
