@@ -12,7 +12,6 @@ Les prix de l’interface proviennent d’une configuration unique dans
 
 - remise groupe : 10 % du plein tarif ;
 - frais sans abonnement : 50 % de cette remise, arrondis au centime ;
-- plafond des frais : 2,99 € par sortie ;
 - abonnement mensuel : 5 € ;
 - abonnement trimestriel : 12 €.
 

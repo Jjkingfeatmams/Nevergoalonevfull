@@ -2621,6 +2621,13 @@
         ));
       }
 
+      function isOutdatedSurveyService(error) {
+        // This can only be returned by an older Function paired with a newer
+        // page. It is a deployment/cache mismatch, not a request for a
+        // visitor's personal data.
+        return !!(error && error.message === "Le sondage ne doit contenir aucune donnée personnelle.");
+      }
+
       function saveSurveyStage(stage, values, retriedAfterSessionConflict) {
         var survey = activeSurvey();
         if (!survey) return Promise.reject(new Error("Le parcours de test doit être repris depuis la sortie."));
@@ -2650,6 +2657,12 @@
             // the exact same stage once without showing an error to the user.
             survey.sessionId = createSurveySessionId(survey.eventId, true);
             return saveSurveyStage(stage, values, true);
+          }
+          if (isOutdatedSurveyService(error)) {
+            throw new Error(i18n(
+              "Le service vient d’être mis à jour. Actualise la page, puis recommence ce court sondage.",
+              "The service was just updated. Refresh the page, then restart this short survey."
+            ));
           }
           throw error;
         });

@@ -17,8 +17,8 @@ const GENDERS = new Set(["woman", "man", "unspecified"]);
 // point to an older form with different questions. Only this dedicated form
 // receives a consenting visitor's e-mail together with their survey answers.
 const CONTACT_SURVEY_FORM_RESPONSE_URL = process.env.NEVER_GO_ALONE_CONTACT_FORM_RESPONSE_URL || "https://docs.google.com/forms/d/e/1FAIpQLSf51Y4uCxD4KDSdK-lxJmK4ZQREWskSfsKgjGDiHo4wDOexQw/formResponse";
-const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v1";
-const ANONYMOUS_DECLINE_FORM_VERSION = "dedicated-decline-v1";
+const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v4";
+const ANONYMOUS_DECLINE_FORM_VERSION = "dedicated-decline-v3";
 const ANONYMOUS_DECLINE_NOTE = "Réponse anonyme — parcours arrêté après la question d’intérêt.";
 const SITUATION_TARGETS = new Map([
   ["drop", true],
@@ -26,7 +26,10 @@ const SITUATION_TARGETS = new Map([
   ["alone-fine", false]
 ]);
 const OFFER_USEFUL_RESPONSES = new Set(["yes", "no"]);
-const SUBSCRIPTION_PREFERENCES = new Set(["monthly", "quarterly", "per-event", "no"]);
+// "lower-monthly" is retained only so answers collected by the immediately
+// previous test version remain readable in the anonymous aggregate.
+const SUBSCRIPTION_PREFERENCES = new Set(["monthly", "lower-monthly", "quarterly", "per-event", "no"]);
+const SUBSCRIPTION_PRICE_OPINIONS = new Set(["fair", "lower", "too-expensive"]);
 const CONTACT_FORM_SITUATIONS = new Map([
   ["drop", "Je laisse tomber"],
   ["unenthusiastic", "J'y vais quand même, mais sans grand enthousiasme"],
@@ -37,10 +40,15 @@ const CONTACT_FORM_OFFER_USEFUL = new Map([
   ["no", "Non, ça ne m’intéresse pas"]
 ]);
 const CONTACT_FORM_PREFERENCES = new Map([
-  ["monthly", "2,99 € par mois. Un accès aux tarifs de groupe sans frais de service"],
-  ["quarterly", "7,99 € par trimestre. Environ 2,66 € par mois, sans frais de service, avec un engagement de trois mois"],
-  ["per-event", "Payer seulement à l’événement. Tu paies le tarif de groupe plus 2 € de frais de service à chaque sortie"],
+  ["monthly", "5,00 € par mois. Un accès aux tarifs de groupe sans frais de service"],
+  ["quarterly", "12,00 € par trimestre. Environ 4,00 € par mois, sans frais de service, avec un engagement de trois mois"],
+  ["per-event", "Payer seulement à l’événement. Tu paies le tarif de groupe plus 50% de la remise de frais de service à chaque sortie"],
   ["no", "Je n’utiliserais pas l’application avec ce modèle. Cette proposition ne me conviendrait pas."]
+]);
+const CONTACT_FORM_PRICE_OPINIONS = new Map([
+  ["fair", "5 € par mois, c'est un prix qui me convient"],
+  ["lower", "5 € par mois, c'est trop cher, mais je serais prêt(e) à payer 2,99 € par mois"],
+  ["too-expensive", "Même 2,99 € par mois, ce serait trop cher pour moi et je privilégierais la formule sans abonnement"]
 ]);
 const SURVEY_STAGES = new Set(["situation", "offer", "pricing"]);
 const SURVEY_PAYLOAD_KEYS = new Set([
@@ -50,14 +58,16 @@ const SURVEY_PAYLOAD_KEYS = new Set([
   "situation",
   "offerUseful",
   "subscriptionPreference",
+  "subscriptionPriceOpinion",
   "subscriptionFeedback"
 ]);
 const submissionWindows = new Map();
 
 class HttpError extends Error {
-  constructor(status, message) {
+  constructor(status, message, code = "") {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -146,7 +156,8 @@ function completedSurveyForEvent(record, eventId) {
     record.offerUseful === "yes" &&
     CONTACT_FORM_SITUATIONS.has(record.situation) &&
     CONTACT_FORM_OFFER_USEFUL.has(record.offerUseful) &&
-    CONTACT_FORM_PREFERENCES.has(record.subscriptionPreference);
+    CONTACT_FORM_PREFERENCES.has(record.subscriptionPreference) &&
+    CONTACT_FORM_PRICE_OPINIONS.has(record.subscriptionPriceOpinion);
 }
 
 function optionalSurveySessionId(value) {
@@ -164,14 +175,17 @@ async function submitDedicatedSurveyResponse(email, survey) {
   const situation = CONTACT_FORM_SITUATIONS.get(survey.situation);
   const offerUseful = CONTACT_FORM_OFFER_USEFUL.get(survey.offerUseful);
   const subscriptionPreference = CONTACT_FORM_PREFERENCES.get(survey.subscriptionPreference);
-  if (!situation || !offerUseful || !subscriptionPreference) return false;
+  const subscriptionPriceOpinion = survey.subscriptionPriceOpinion
+    ? CONTACT_FORM_PRICE_OPINIONS.get(survey.subscriptionPriceOpinion)
+    : "";
+  if (!situation || !offerUseful || !subscriptionPreference || (survey.offerUseful === "yes" && !subscriptionPriceOpinion)) return false;
 
   const body = new URLSearchParams({
     "entry.2059906264": email,
     "entry.725885935": situation,
     "entry.2046482610": offerUseful,
     "entry.1936886010": subscriptionPreference,
-    "entry.825396935": survey.subscriptionFeedback || ""
+    "entry.825396935": subscriptionPriceOpinion
   });
 
   try {
@@ -205,6 +219,7 @@ async function submitAnonymousDeclineSurvey(survey) {
     // A person who stops at the offer stage has not evaluated pricing. This
     // required Google Form answer is a technical marker, not a real choice.
     subscriptionPreference: "no",
+    subscriptionPriceOpinion: "",
     subscriptionFeedback: ANONYMOUS_DECLINE_NOTE
   });
 }
@@ -300,6 +315,7 @@ function validSurveyRecord(record) {
     typeof record.cible === "boolean" &&
     (record.offerUseful === null || OFFER_USEFUL_RESPONSES.has(record.offerUseful)) &&
     (record.subscriptionPreference === null || SUBSCRIPTION_PREFERENCES.has(record.subscriptionPreference)) &&
+    (!Object.hasOwn(record, "subscriptionPriceOpinion") || record.subscriptionPriceOpinion === null || SUBSCRIPTION_PRICE_OPINIONS.has(record.subscriptionPriceOpinion)) &&
     typeof record.subscriptionFeedback === "string" &&
     (!Object.hasOwn(record, "declineGoogleFormSubmitted") || typeof record.declineGoogleFormSubmitted === "boolean") &&
     (!Object.hasOwn(record, "declineGoogleFormVersion") || typeof record.declineGoogleFormVersion === "string") &&
@@ -307,15 +323,25 @@ function validSurveyRecord(record) {
     typeof record.updatedAt === "string";
 }
 
-function allowSubmission(request, maximumAttempts = 8) {
-  const forwarded = request.headers.get("x-nf-client-connection-ip") || request.headers.get("x-forwarded-for") || "anonymous";
-  const address = forwarded.split(",")[0].trim() || "anonymous";
+function clientAddress(request) {
+  const forwarded = request.headers.get("x-nf-client-connection-ip") || request.headers.get("x-forwarded-for") || "";
+  return forwarded.split(",")[0].trim();
+}
+
+function allowSubmission(request, scope, maximumAttempts) {
+  const address = clientAddress(request);
+  // Never put every visitor in the same "anonymous" bucket when the hosting
+  // layer does not expose an IP address. That would block valid participants
+  // merely because other people tried the prototype first.
+  if (!address) return true;
+
+  const key = scope + ":" + address;
   const now = Date.now();
   const cutoff = now - 10 * 60 * 1000;
-  const attempts = (submissionWindows.get(address) || []).filter((time) => time > cutoff);
+  const attempts = (submissionWindows.get(key) || []).filter((time) => time > cutoff);
   if (attempts.length >= maximumAttempts) return false;
   attempts.push(now);
-  submissionWindows.set(address, attempts);
+  submissionWindows.set(key, attempts);
   if (submissionWindows.size > 5000) submissionWindows.clear();
   return true;
 }
@@ -364,7 +390,10 @@ async function listEventInterests(rawEventId) {
 }
 
 async function saveSurveySession(request) {
-  if (!allowSubmission(request, 15)) throw new HttpError(429, "Trop de réponses. Réessaie dans quelques minutes.");
+  // One visitor makes up to three anonymous requests. This limit therefore
+  // accommodates a shared campus, office or household connection without
+  // weakening the protection against automated bursts.
+  if (!allowSubmission(request, "survey", 120)) throw new HttpError(429, "Le service reçoit beaucoup de réponses. Réessaie dans quelques minutes.");
   const payload = await readJson(request);
   assertSurveyPayload(payload);
 
@@ -377,6 +406,7 @@ async function saveSurveySession(request) {
   const cible = SITUATION_TARGETS.get(situation);
   let offerUseful = null;
   let subscriptionPreference = null;
+  let subscriptionPriceOpinion = null;
   let subscriptionFeedback = "";
 
   if (stage === "offer" || stage === "pricing") {
@@ -388,18 +418,14 @@ async function saveSurveySession(request) {
       throw new HttpError(400, "La formule tarifaire ne peut être évaluée qu’après un oui à l’offre.");
     }
     subscriptionPreference = surveyChoice(payload.subscriptionPreference, SUBSCRIPTION_PREFERENCES, "Préférence d’abonnement");
-    subscriptionFeedback = cleanOptionalPublicText(
-      payload.subscriptionFeedback,
-      MAX_SUBSCRIPTION_FEEDBACK_LENGTH,
-      "Commentaire sur la formule"
-    ).value;
+    subscriptionPriceOpinion = surveyChoice(payload.subscriptionPriceOpinion, SUBSCRIPTION_PRICE_OPINIONS, "Avis sur le prix mensuel");
   }
 
   const store = interestStore();
   const key = surveyKey(sessionId);
   const existing = await store.get(key, { type: "json" });
   if (existing && (!validSurveyRecord(existing) || existing.eventId !== eventId)) {
-    throw new HttpError(409, "Cette session de sondage ne peut pas être réutilisée.");
+    throw new HttpError(409, "Cette session de sondage ne peut pas être réutilisée.", "survey-session-conflict");
   }
 
   const now = new Date().toISOString();
@@ -412,6 +438,7 @@ async function saveSurveySession(request) {
     cible,
     offerUseful,
     subscriptionPreference,
+    subscriptionPriceOpinion,
     subscriptionFeedback,
     declineGoogleFormSubmitted: validSurveyRecord(existing) && existing.declineGoogleFormSubmitted === true,
     declineGoogleFormVersion: validSurveyRecord(existing) && typeof existing.declineGoogleFormVersion === "string"
@@ -459,7 +486,8 @@ function emptySurveySegment() {
   return {
     sessions: 0,
     offerUseful: { yes: 0, no: 0, pending: 0 },
-    subscriptionPreference: { monthly: 0, quarterly: 0, "per-event": 0, no: 0, pending: 0 }
+    subscriptionPreference: { monthly: 0, "lower-monthly": 0, quarterly: 0, "per-event": 0, no: 0, pending: 0 },
+    subscriptionPriceOpinion: { fair: 0, lower: 0, "too-expensive": 0, pending: 0 }
   };
 }
 
@@ -472,6 +500,11 @@ function addSurveyToSegment(segment, record) {
     segment.subscriptionPreference[record.subscriptionPreference] += 1;
   } else {
     segment.subscriptionPreference.pending += 1;
+  }
+  if (record.subscriptionPriceOpinion && Object.hasOwn(segment.subscriptionPriceOpinion, record.subscriptionPriceOpinion)) {
+    segment.subscriptionPriceOpinion[record.subscriptionPriceOpinion] += 1;
+  } else {
+    segment.subscriptionPriceOpinion.pending += 1;
   }
 }
 
@@ -496,7 +529,7 @@ async function surveySummary(request) {
 }
 
 async function createInterest(request) {
-  if (!allowSubmission(request)) throw new HttpError(429, "Trop de demandes. Réessaie dans quelques minutes.");
+  if (!allowSubmission(request, "interest", 40)) throw new HttpError(429, "Le service reçoit beaucoup de demandes. Réessaie dans quelques minutes.");
   const payload = await readJson(request);
   if (cleanText(payload.website, 200)) throw new HttpError(400, "Données de formulaire invalides.");
 
@@ -640,7 +673,9 @@ export default async function liveInterest(request) {
     if (request.method === "POST" && path === "/api/interests/withdraw") return await withdrawInterest(request);
     return json({ error: "Route introuvable." }, 404);
   } catch (error) {
-    if (error instanceof HttpError) return json({ error: error.message }, error.status);
+    if (error instanceof HttpError) {
+      return json(Object.assign({ error: error.message }, error.code ? { code: error.code } : {}), error.status);
+    }
     return json({ error: "Le service live rencontre un problème. Réessaie dans un instant." }, 500);
   }
 }
