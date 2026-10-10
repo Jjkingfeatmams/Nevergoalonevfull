@@ -110,11 +110,11 @@ d’éviter les blocages CORS de Google Forms. En cas d’indisponibilité de Go
 le profil est quand même ajouté au groupe ; aucun échec de formulaire externe
 ne doit annuler cette action.
 
-Pour remplacer le Google Form un jour, configure uniquement la variable
-d’environnement `NEVER_GO_ALONE_CONTACT_FORM_RESPONSE_URL` avec son endpoint
-`formResponse`, puis mets à jour les identifiants `entry.*` et les libellés de
-choix dans `netlify/functions/live-interest.mjs`. L’ancienne variable
-`GOOGLE_FORM_RESPONSE_URL` n’est volontairement pas utilisée.
+Le formulaire de ce test est fixé directement dans
+`netlify/functions/live-interest.mjs` afin qu’une ancienne variable Netlify ne
+redirige jamais les réponses vers un autre formulaire. Pour le remplacer un
+jour, mets à jour à la fois son endpoint `formResponse`, les identifiants
+`entry.*` et les libellés de choix dans ce fichier, puis redéploie la Function.
 
 Le Google Form dédié fourni à cette version contient les quatre choix suivants
 pour la formule :

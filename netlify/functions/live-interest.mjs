@@ -13,11 +13,11 @@ const MAX_SUBSCRIPTION_FEEDBACK_LENGTH = 300;
 const EVENT_ID_PATTERN = /^nga-(paris|lyon|lille|marseille|bordeaux|nantes|strasbourg)-[a-z0-9-]{3,170}$/;
 const SURVEY_SESSION_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const GENDERS = new Set(["woman", "man", "unspecified"]);
-// This is deliberately not GOOGLE_FORM_RESPONSE_URL: that legacy variable can
-// point to an older form with different questions. Only this dedicated form
-// receives a consenting visitor's e-mail together with their survey answers.
-const CONTACT_SURVEY_FORM_RESPONSE_URL = process.env.NEVER_GO_ALONE_CONTACT_FORM_RESPONSE_URL || "https://docs.google.com/forms/d/e/1FAIpQLSf51Y4uCxD4KDSdK-lxJmK4ZQREWskSfsKgjGDiHo4wDOexQw/formResponse";
-const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v4";
+// This is deliberately a fixed endpoint rather than an environment override:
+// the owner selected this precise form for the live test. An older Netlify
+// environment value must never silently redirect new answers to another form.
+const CONTACT_SURVEY_FORM_RESPONSE_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf51Y4uCxD4KDSdK-lxJmK4ZQREWskSfsKgjGDiHo4wDOexQw/formResponse";
+const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v5";
 const ANONYMOUS_DECLINE_FORM_VERSION = "dedicated-decline-v3";
 const ANONYMOUS_DECLINE_NOTE = "Réponse anonyme — parcours arrêté après la question d’intérêt.";
 const SITUATION_TARGETS = new Map([
