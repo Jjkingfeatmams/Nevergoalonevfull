@@ -13,11 +13,11 @@ const MAX_SUBSCRIPTION_FEEDBACK_LENGTH = 300;
 const EVENT_ID_PATTERN = /^nga-(paris|lyon|lille|marseille|bordeaux|nantes|strasbourg)-[a-z0-9-]{3,170}$/;
 const SURVEY_SESSION_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const GENDERS = new Set(["woman", "man", "unspecified"]);
-// This is deliberately not GOOGLE_FORM_RESPONSE_URL: that legacy variable can
-// point to an older form with different questions. Only this dedicated form
-// receives a consenting visitor's e-mail together with their survey answers.
-const CONTACT_SURVEY_FORM_RESPONSE_URL = process.env.NEVER_GO_ALONE_CONTACT_FORM_RESPONSE_URL || "https://docs.google.com/forms/d/e/1FAIpQLSf51Y4uCxD4KDSdK-lxJmK4ZQREWskSfsKgjGDiHo4wDOexQw/formResponse";
-const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v4";
+// This is deliberately a fixed endpoint rather than an environment override:
+// the owner selected this precise form for the live test. An older Netlify
+// environment value must never silently redirect new answers to another form.
+const CONTACT_SURVEY_FORM_RESPONSE_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf51Y4uCxD4KDSdK-lxJmK4ZQREWskSfsKgjGDiHo4wDOexQw/formResponse";
+const CONTACT_SURVEY_FORM_VERSION = "dedicated-pricing-v5";
 const ANONYMOUS_DECLINE_FORM_VERSION = "dedicated-decline-v3";
 const ANONYMOUS_DECLINE_NOTE = "Réponse anonyme — parcours arrêté après la question d’intérêt.";
 const SITUATION_TARGETS = new Map([
@@ -323,15 +323,25 @@ function validSurveyRecord(record) {
     typeof record.updatedAt === "string";
 }
 
-function allowSubmission(request, maximumAttempts = 8) {
-  const forwarded = request.headers.get("x-nf-client-connection-ip") || request.headers.get("x-forwarded-for") || "anonymous";
-  const address = forwarded.split(",")[0].trim() || "anonymous";
+function clientAddress(request) {
+  const forwarded = request.headers.get("x-nf-client-connection-ip") || request.headers.get("x-forwarded-for") || "";
+  return forwarded.split(",")[0].trim();
+}
+
+function allowSubmission(request, scope, maximumAttempts) {
+  const address = clientAddress(request);
+  // Never put every visitor in the same "anonymous" bucket when the hosting
+  // layer does not expose an IP address. That would block valid participants
+  // merely because other people tried the prototype first.
+  if (!address) return true;
+
+  const key = scope + ":" + address;
   const now = Date.now();
   const cutoff = now - 10 * 60 * 1000;
-  const attempts = (submissionWindows.get(address) || []).filter((time) => time > cutoff);
+  const attempts = (submissionWindows.get(key) || []).filter((time) => time > cutoff);
   if (attempts.length >= maximumAttempts) return false;
   attempts.push(now);
-  submissionWindows.set(address, attempts);
+  submissionWindows.set(key, attempts);
   if (submissionWindows.size > 5000) submissionWindows.clear();
   return true;
 }
@@ -380,7 +390,10 @@ async function listEventInterests(rawEventId) {
 }
 
 async function saveSurveySession(request) {
-  if (!allowSubmission(request, 15)) throw new HttpError(429, "Trop de réponses. Réessaie dans quelques minutes.");
+  // One visitor makes up to three anonymous requests. This limit therefore
+  // accommodates a shared campus, office or household connection without
+  // weakening the protection against automated bursts.
+  if (!allowSubmission(request, "survey", 120)) throw new HttpError(429, "Le service reçoit beaucoup de réponses. Réessaie dans quelques minutes.");
   const payload = await readJson(request);
   assertSurveyPayload(payload);
 
@@ -516,7 +529,7 @@ async function surveySummary(request) {
 }
 
 async function createInterest(request) {
-  if (!allowSubmission(request)) throw new HttpError(429, "Trop de demandes. Réessaie dans quelques minutes.");
+  if (!allowSubmission(request, "interest", 40)) throw new HttpError(429, "Le service reçoit beaucoup de demandes. Réessaie dans quelques minutes.");
   const payload = await readJson(request);
   if (cleanText(payload.website, 200)) throw new HttpError(400, "Données de formulaire invalides.");
 
